@@ -113,16 +113,23 @@ STEP = 0.2
 TOLERANCE = 0.3
 rover = Rover()
 
+def get_float(prompt):
+    while True:
+        try:
+            return float(input(prompt))
+        except ValueError:
+            print("❌ Invalid number. Please try again.")
+
 # 1) User inputs
 print("🔧 Enter start coords:")
-x1 = float(input(" x1: "))
-y1 = float(input(" y1: "))
+x1 = get_float(" x1: ")
+y1 = get_float(" y1: ")
 print("🔧 Enter 2nd coords (to set heading):")
-x2 = float(input(" x2: "))
-y2 = float(input(" y2: "))
+x2 = get_float(" x2: ")
+y2 = get_float(" y2: ")
 print("🎯 Enter waypoint coords:")
-wx = float(input(" wx: "))
-wy = float(input(" wy: "))
+wx = get_float(" wx: ")
+wy = get_float(" wy: ")
 rover.set_waypoint(wx, wy)
 
 # 2) Plot setup
