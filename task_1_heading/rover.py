@@ -1,126 +1,193 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from math import atan2, degrees, radians, sin, cos, sqrt
+import math
 import time
+import matplotlib.pyplot as plt
+import numpy as np
 
 class Rover:
-    def __init__(self, x=0, y=0):
-        self.x = x
-        self.y = y
-        self.heading = 0  # radians (0 = East)
-        self.history = [(x, y)]
-        
-    def move_forward(self, distance):
-        target_dist = self.distance_to(*waypoint)
-        if target_dist <= 0.001:
-            return 0
-        
-        actual_move = min(distance, target_dist)
-        self.x += actual_move * cos(self.heading)
-        self.y += actual_move * sin(self.heading)
+    def __init__(self):
+        self.x = 0.0
+        self.y = 0.0
+        self.heading = 0.0
+        self.history = [(self.x, self.y)]
+        self.command_count = 0
+        self.waypoint = None
+
+    def set_position(self, x, y):
+        self.command_count += 1
+        self.x, self.y = x, y
         self.history.append((self.x, self.y))
-        print(f"\nCommand: Move forward {actual_move:.2f}m")
-        print(f"   ➤ Rover Position: ({self.x:.3f}, {self.y:.3f})")
-        print(f"   ➤ Waypoint: ({waypoint[0]:.3f}, {waypoint[1]:.3f})")
-        print(f"   ➤ Remaining distance: {self.distance_to(*waypoint):.3f}m")
-        return actual_move
-        
-    def turn(self, angle_degrees):
-        self.heading = (self.heading + radians(angle_degrees)) % (2*np.pi)
-        direction = "left" if angle_degrees > 0 else "right"
-        print(f"\nCommand: Turn {direction} {abs(angle_degrees):.1f}°")
-        print(f"   ➤ Rover Heading: {degrees(self.heading):.1f}°")
-        print(f"   ➤ Rover Position: ({self.x:.3f}, {self.y:.3f})")
-        print(f"   ➤ Remaining distance: {self.distance_to(*waypoint):.3f}m")
+        print(f"Command #{self.command_count}: SET_POSITION")
+        print(f"➡️ Rover position: ({self.x:.3f}, {self.y:.3f})")
+        if self.waypoint:
+            self.report_status()
 
-    def calculate_heading_to(self, target_x, target_y):
-        dx = target_x - self.x
-        dy = target_y - self.y
-        return atan2(dy, dx)
-    
-    def distance_to(self, target_x, target_y):
-        return sqrt((target_x - self.x)**2 + (target_y - self.y)**2)
+    def move_forward(self, distance):
+        self.command_count += 1
+        rad = math.radians(self.heading)
+        old_x, old_y = self.x, self.y
+        self.x += distance * math.cos(rad)
+        self.y += distance * math.sin(rad)
+        self.history.append((self.x, self.y))
+        print(f"Command #{self.command_count}: MOVE_FORWARD {distance:.2f}")
+        print(f"➡️ Rover moved from ({old_x:.3f}, {old_y:.3f}) to ({self.x:.3f}, {self.y:.3f})")
+        if self.waypoint:
+            self.report_status()
 
-# === Setup ===
+    def rotate_by(self, angle_deg):
+        self.command_count += 1
+        old_heading = self.heading
+        self.heading = (self.heading + angle_deg) % 360
+        print(f"Command #{self.command_count}: ROTATE_BY {angle_deg:.1f}°")
+        print(f"🔄 Rover rotated from {old_heading:.1f}° to {self.heading:.1f}°")
+        if self.waypoint:
+            self.report_status()
+
+    def calculate_heading_to(self, tx, ty):
+        dx, dy = tx - self.x, ty - self.y
+        return math.degrees(math.atan2(dy, dx)) % 360
+
+    def distance_to(self, tx, ty):
+        return math.hypot(tx - self.x, ty - self.y)
+
+    def set_waypoint(self, x, y):
+        self.waypoint = (x, y)
+
+    def report_status(self):
+        if not self.waypoint:
+            print("\n--- STATUS REPORT ---")
+            print(f"📍 Position: ({self.x:.3f}, {self.y:.3f})")
+            print(f"🧭 Heading: {self.heading:.1f}°")
+            print("🎯 No waypoint set")
+            print("---------------------\n")
+            return None, None
+        dist = self.distance_to(*self.waypoint)
+        desired = self.calculate_heading_to(*self.waypoint)
+        diff = (desired - self.heading + 180) % 360 - 180
+        print("\n--- STATUS REPORT ---")
+        print(f"📍 Position: ({self.x:.3f}, {self.y:.3f})")
+        print(f"🧭 Heading: {self.heading:.1f}°")
+        print(f"🎯 Distance to waypoint: {dist:.3f}")
+        print(f"🔄 Angle adj needed: {diff:.1f}°")
+        print("---------------------\n")
+        return dist, diff
+
+def visualize_turn(rover, target_heading, ax, fig):
+    curr = rover.heading
+    diff = (target_heading - curr + 180) % 360 - 180
+    if abs(diff) < 5:
+        return
+    steps = max(5, min(36, abs(int(diff / 10))))
+    step_ang = diff / steps
+
+    rad_t = math.radians(target_heading)
+    targ = ax.arrow(rover.x, rover.y,
+                    STEP * math.cos(rad_t),
+                    STEP * math.sin(rad_t),
+                    head_width=0.1, fc='red', ec='red', alpha=0.7)
+    note = ax.annotate(f"Turning {abs(diff):.1f}°",
+                       xy=(rover.x, rover.y),
+                       xytext=(rover.x+0.5, rover.y+0.5),
+                       arrowprops=dict(facecolor='black', shrink=0.05),
+                       fontsize=9)
+
+    arrow = None
+    for i in range(steps+1):
+        ang = (curr + i*step_ang) % 360
+        if arrow:
+            arrow.remove()
+        rad = math.radians(ang)
+        arrow = ax.arrow(rover.x, rover.y,
+                         STEP * math.cos(rad),
+                         STEP * math.sin(rad),
+                         head_width=0.1, fc='blue', ec='blue')
+        fig.canvas.draw()
+        plt.pause(0.05)
+
+    if arrow: arrow.remove()
+    targ.remove()
+    note.remove()
+    rover.heading = target_heading
+
+# --- MAIN ---
+STEP = 0.2
+TOLERANCE = 0.3
 rover = Rover()
-waypoint = (5, 3)
-step_size = 0.2
-tolerance = 0.001
 
-# === Plot Setup ===
+# 1) User inputs
+print("🔧 Enter start coords:")
+x1 = float(input(" x1: "))
+y1 = float(input(" y1: "))
+print("🔧 Enter 2nd coords (to set heading):")
+x2 = float(input(" x2: "))
+y2 = float(input(" y2: "))
+print("🎯 Enter waypoint coords:")
+wx = float(input(" wx: "))
+wy = float(input(" wy: "))
+rover.set_waypoint(wx, wy)
+
+# 2) Plot setup
 plt.ion()
-fig, ax = plt.subplots(figsize=(8, 6))
-ax.set_xlim(-1, 6)
-ax.set_ylim(-1, 6)
-ax.grid(True)
-ax.set_title('Rover Navigation - Smooth Turn Then Drive')
-ax.scatter(0, 0, c='green', label='Start')
-ax.scatter(*waypoint, c='red', label='Waypoint')
-path_line, = ax.plot([], [], 'b-', alpha=0.5, label='Path')
-heading_arrow = ax.arrow(0, 0, 0.1, 0, head_width=0.2, fc='k')
-ax.legend()
+fig, ax = plt.subplots(figsize=(8,6))
+mx, Mx = min(x1,x2,wx)-1, max(x1,x2,wx)+1
+my, My = min(y1,y2,wy)-1, max(y1,y2,wy)+1
+ax.set_xlim(mx, Mx); ax.set_ylim(my, My); ax.grid(True)
+ax.scatter(x1,y1,c='green',s=80,label='Start')
+ax.scatter(wx,wy,c='red',s=120,marker='*',label='Waypoint')
+path_line, = ax.plot([],[],'b-',alpha=0.5,label='Path')
+ax.legend(loc='upper left'); fig.canvas.draw(); plt.pause(0.1)
 
-# === Initial Movement for Heading Determination ===
-initial_move = 1.0
-while initial_move > 0:
-    move_dist = min(0.1, initial_move)
-    rover.move_forward(move_dist)
-    initial_move -= move_dist
-
+# 3) Initial move & heading
+rover.set_position(x1,y1)
+h0 = rover.calculate_heading_to(x2,y2)
+rover.heading = h0
+print(f"🧭 Initial heading: {rover.heading:.1f}°")
+dist = rover.distance_to(x2,y2)
+while dist > STEP:
+    rover.move_forward(min(STEP,dist))
     path_line.set_data(*zip(*rover.history))
-    heading_arrow.remove()
-    heading_arrow = ax.arrow(
-        rover.x, rover.y,
-        0.3 * cos(rover.heading),
-        0.3 * sin(rover.heading),
-        head_width=0.2, fc='k'
-    )
-    fig.canvas.flush_events()
-    time.sleep(0.05)
+    fig.canvas.draw(); plt.pause(0.05)
+    dist = rover.distance_to(x2,y2)
+print(f"🧭 Initial move done. Heading: {rover.heading:.1f}°")
 
-print(f"\nInitial heading: {degrees(rover.heading):.1f}°")
+# 4) Mark turn start
+turn_pt = (rover.x, rover.y)
+ax.scatter(turn_pt[0], turn_pt[1],
+           c='orange',marker='D',s=100,label='Turn Start')
+ax.legend(loc='upper left'); fig.canvas.draw(); plt.pause(0.1)
 
-# === Smooth One-Time Turn to Face Waypoint ===
-target_angle = rover.calculate_heading_to(*waypoint)
-turn_angle = degrees((target_angle - rover.heading + np.pi) % (2 * np.pi) - np.pi)
+# 5) Align if >90°
+dist, diff = rover.report_status()
+if abs(diff) > 90:
+    print("⚠️ >90° off — aligning first...")
+    tgt = rover.calculate_heading_to(wx,wy)
+    visualize_turn(rover,tgt,ax,fig)
+    old = rover.heading; rover.heading = tgt; rover.command_count+=1
+    print(f"Cmd#{rover.command_count}: ROTATE_BY {diff:.1f}° → {rover.heading:.1f}°")
+else:
+    print("✅ Within 90° — no preliminary alignment.")
 
-if abs(turn_angle) > 1:
-    num_turn_steps = int(abs(turn_angle) / 2) or 1
-    for _ in range(num_turn_steps):
-        small_turn = turn_angle / num_turn_steps
-        rover.turn(small_turn)
-
-        heading_arrow.remove()
-        heading_arrow = ax.arrow(
-            rover.x, rover.y,
-            0.3 * cos(rover.heading),
-            0.3 * sin(rover.heading),
-            head_width=0.2, fc='k'
-        )
-        fig.canvas.flush_events()
-        time.sleep(0.05)
-
-# === Move Straight Toward Waypoint ===
-while rover.distance_to(*waypoint) > tolerance:
-    move_dist = min(step_size, rover.distance_to(*waypoint))
-    rover.move_forward(move_dist)
-
+# 6) Drive to waypoint
+print("🚗 Driving to waypoint...\n")
+dist = rover.distance_to(wx,wy)
+arrow = None
+while dist > TOLERANCE:
+    tgt = rover.calculate_heading_to(wx,wy)
+    df = (tgt - rover.heading + 180) % 360 - 180
+    if abs(df) > 5:
+        visualize_turn(rover,tgt,ax,fig)
+        old=rover.heading; rover.heading=tgt; rover.command_count+=1
+        print(f"Cmd#{rover.command_count}: ROTATE_BY {df:.1f}° → {rover.heading:.1f}°")
+        if arrow: arrow.remove()
+    rover.move_forward(min(STEP, dist))
+    dist = rover.distance_to(wx,wy)
     path_line.set_data(*zip(*rover.history))
-    heading_arrow.remove()
-    arrow_length = min(0.3, rover.distance_to(*waypoint) * 0.7)
-    heading_arrow = ax.arrow(
-        rover.x, rover.y,
-        arrow_length * cos(rover.heading),
-        arrow_length * sin(rover.heading),
-        head_width=0.2, fc='k'
-    )
-    fig.canvas.flush_events()
-    time.sleep(0.05)
+    if arrow: arrow.remove()
+    rad = math.radians(rover.heading)
+    arrow = ax.arrow(rover.x,rover.y,
+                     STEP*math.cos(rad),
+                     STEP*math.sin(rad),
+                     head_width=0.1,fc='blue',ec='blue')
+    fig.canvas.draw(); plt.pause(0.05)
 
-# === Final Touch ===
-heading_arrow.remove()
-ax.scatter(waypoint[0], waypoint[1], c='black', marker='>', s=200, label='Final Heading')
-ax.legend()
-plt.ioff()
-print("\n✅ Waypoint reached with perfect precision!")
-plt.show()
+print(f"\n✅ Reached ({rover.x:.3f},{rover.y:.3f}) in {rover.command_count} commands.")
+plt.ioff(); plt.show()
