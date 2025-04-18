@@ -3,59 +3,174 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Polygon
+import matplotlib.transforms as transforms
 
 # --- Constants ---
-STEP = 0.2
-TOLERANCE = 0.3
-MAX_ATTEMPTS = 100
-DEBUG = False  # Set to True for detailed error messages
+STEP = 0.5  # Increased for faster navigation
+TOLERANCE = 0.5  # Increased tolerance for reaching targets
+MAX_ATTEMPTS = 200  # Increased maximum attempts
+DEBUG = False
+ANIMATION_SPEED = 0.05  # Rotation animation speed (lower is faster)
+
+def get_float(prompt):
+    """Get a float value from user with error handling"""
+    while True:
+        try:
+            value = float(input(prompt))
+            return value
+        except ValueError:
+            print("⚠️ Please enter a valid number.")
 
 class Rover:
     def __init__(self):
         self.x = 0.0
         self.y = 0.0
         self.heading = 0.0
-        self.history = []  # Empty history initially - only add after positioning
+        self.history = []
         self.command_count = 0
         self.waypoint = None
         self.geofence = None
         self.inside_fence = False
         self.entry_point = None
         self.blocked_directions = set()
-
-    def set_geofence(self, vertices, entry_point=None):
-        """Set the geofence boundary using a list of (x,y) vertices"""
-        self.geofence = vertices
-        # If entry point is not specified, use the first vertex
-        self.entry_point = entry_point if entry_point else vertices[0]
-        print("🔒 Geofence boundary set")
-        print(f"🚪 Entry point set at: ({self.entry_point[0]:.3f}, {self.entry_point[1]:.3f})")
-        # Check if current position is inside the geofence
-        self.update_fence_status()
+        self.stuck_count = 0  # Counter for detecting when rover is stuck
+        self.last_position = (0, 0)
+        self.position_history = []  # To detect cycles and stuck conditions
+        self.rover_patch = None  # Visual representation of the rover
+        self.fence_locked = False  # NEW: Track if rover is locked within the fence
         
-    def update_fence_status(self):
-        """Check if rover is inside the geofence"""
-        old_status = self.inside_fence
-        if self.geofence is None:
-            self.inside_fence = True
-        else:
-            self.inside_fence = self.is_point_in_polygon(self.x, self.y, self.geofence)
-        
-        if old_status != self.inside_fence:
-            if self.inside_fence:
-                print("✅ Rover ENTERED geofenced area!")
-            else:
-                print("⚠️ Rover EXITED geofenced area!")
-        
-        return self.inside_fence
+    def set_position(self, x, y, heading=None, force=False, add_to_history=True):
+        """Set rover position with optional heading"""
+        if self.geofence and not force:
+            # Check if movement would cross fence
+            in_fence = self.is_point_in_polygon(x, y, self.geofence)
+            
+            # NEW: If locked inside fence, reject any attempt to leave
+            if self.fence_locked and self.inside_fence and not in_fence:
+                print(f"🔒 Movement blocked: Rover is locked inside the farm")
+                return False
+                
+            # Handle normal fence crossing (for entering)
+            if (in_fence and not self.inside_fence) or (not in_fence and self.inside_fence):
+                # Would cross fence boundary without going through entry
+                if not self.is_entry_point(x, y):
+                    print(f"⚠️ Movement blocked: would cross fence boundary")
+                    return False
+                else:
+                    # Crossing at entry point is OK
+                    self.inside_fence = in_fence
+                    # NEW: If entering, lock the rover inside
+                    if in_fence:
+                        self.fence_locked = True
+                        print(f"🔒 Rover now locked inside farm boundaries")
+            
+        # Set new position
+        self.x = x
+        self.y = y
+        if heading is not None:
+            self.heading = heading % 360  # Normalize heading to 0-359
+            
+        # Add to history if tracking
+        if add_to_history:
+            self.history.append((x, y))
+            
+        return True
     
-    def is_point_in_polygon(self, x, y, polygon):
-        """Ray casting algorithm to determine if point is in polygon"""
-        n = len(polygon)
+    def set_waypoint(self, x, y):
+        """Set target waypoint"""
+        self.waypoint = (x, y)
+        
+    def set_geofence(self, vertices, entry_point):
+        """Set geofence polygon and entry point"""
+        self.geofence = vertices
+        self.entry_point = entry_point
+        # Check if we're inside the fence initially
+        self.inside_fence = self.is_point_in_polygon(self.x, self.y, vertices)
+        
+    def move_forward(self, distance, ax=None, fig=None, rover_patch=None):
+        """Move rover forward in current heading direction"""
+        if distance <= 0:
+            print("⚠️ Invalid distance value <= 0")
+            return False
+            
+        # Calculate target position
+        rad = math.radians(self.heading)
+        target_x = self.x + distance * math.cos(rad)
+        target_y = self.y + distance * math.sin(rad)
+        
+        # For smoother animation of longer movements
+        if ax and fig and rover_patch and distance > STEP:
+            steps = min(int(distance / (STEP/2)), 5)  # Max 5 animation steps
+            if steps > 1:
+                step_x = (target_x - self.x) / steps
+                step_y = (target_y - self.y) / steps
+                
+                for i in range(steps-1):
+                    # Calculate intermediate position
+                    next_x = self.x + step_x
+                    next_y = self.y + step_y
+                    
+                    # Temporary update position (don't add to history yet)
+                    success = self.set_position(next_x, next_y, add_to_history=False)
+                    if not success:
+                        return False
+                        
+                    # Update visualization
+                    update_rover_visualization(self, ax, fig, rover_patch)
+                    plt.pause(ANIMATION_SPEED/2)
+        
+        # Complete the movement (add to history)
+        success = self.set_position(target_x, target_y)
+        
+        if success:
+            self.command_count += 1
+            print(f"Cmd #{self.command_count}: MOVE_FWD {distance:.2f}m → ({self.x:.3f}, {self.y:.3f})")
+            
+            # Display distance to waypoint and entry point
+            if self.waypoint:
+                waypoint_dist = self.distance_to(*self.waypoint)
+                print(f"   📏 Distance to waypoint: {waypoint_dist:.2f}m")
+            
+            if self.entry_point and not self.inside_fence:
+                entry_dist = self.distance_to(*self.entry_point)
+                print(f"   📏 Distance to entry point: {entry_dist:.2f}m")
+                
+            return True
+        else:
+            # If movement was blocked, mark this general direction as blocked
+            rounded_heading = int(self.heading / 10) * 10  # Round to nearest 10 degrees
+            self.blocked_directions.add(rounded_heading)
+            print(f"⚠️ Movement in direction {rounded_heading}° blocked")
+            return False
+    
+    def calculate_heading_to(self, target_x, target_y):
+        """Calculate heading angle to target point"""
+        dx = target_x - self.x
+        dy = target_y - self.y
+        
+        # Handle case where target is very close to current position
+        if abs(dx) < 1e-6 and abs(dy) < 1e-6:
+            return self.heading  # Keep current heading if target is same as current position
+        
+        # Calculate angle in degrees, 0 = east, 90 = north
+        angle = math.degrees(math.atan2(dy, dx))
+        if angle < 0:
+            angle += 360
+            
+        return angle
+    
+    def distance_to(self, target_x, target_y):
+        """Calculate distance to target point"""
+        return math.hypot(target_x - self.x, target_y - self.y)
+    
+    def is_point_in_polygon(self, x, y, vertices):
+        """Check if point is inside polygon using ray casting algorithm"""
+        n = len(vertices)
         inside = False
-        p1x, p1y = polygon[0]
+        
+        p1x, p1y = vertices[0]
         for i in range(1, n + 1):
-            p2x, p2y = polygon[i % n]
+            p2x, p2y = vertices[i % n]
             if y > min(p1y, p2y):
                 if y <= max(p1y, p2y):
                     if x <= max(p1x, p2x):
@@ -64,119 +179,52 @@ class Rover:
                         if p1x == p2x or x <= xinters:
                             inside = not inside
             p1x, p1y = p2x, p2y
+            
         return inside
-
-    def set_position(self, x, y, force=False, add_to_history=True):
-        self.command_count += 1
-        old_x, old_y = self.x, self.y
+    
+    def is_entry_point(self, x, y, tolerance=TOLERANCE):
+        """Check if point is at the entry point (within tolerance)"""
+        if self.entry_point:
+            return self.distance_to(*self.entry_point) <= tolerance
+        return False
+    
+    def detect_and_resolve_stuck(self):
+        """Detect if rover is stuck and try to resolve it"""
+        # Check if we've moved significantly in the last few commands
+        current_pos = (self.x, self.y)
         
-        # Store the proposed new position
-        proposed_x, proposed_y = x, y
-        
-        # Check if the move would take us outside the geofence
-        if not force and self.geofence is not None and self.inside_fence:
-            if not self.is_point_in_polygon(proposed_x, proposed_y, self.geofence):
-                print(f"❌ Command #{self.command_count}: SET_POSITION - BLOCKED by geofence")
-                print(f"⚠️ Position ({proposed_x:.3f}, {proposed_y:.3f}) is outside the geofence")
-                return False
-        
-        # Update position if allowed
-        self.x, self.y = proposed_x, proposed_y
-        if add_to_history:
-            self.history.append((self.x, self.y))
-        print(f"Command #{self.command_count}: SET_POSITION")
-        print(f"➡️ Rover position: ({self.x:.3f}, {self.y:.3f})")
-        self.update_fence_status()
-        
-        if self.waypoint:
-            self.report_status()
+        # Add current position to history (keep last 10)
+        self.position_history.append(current_pos)
+        if len(self.position_history) > 10:
+            self.position_history.pop(0)
             
-        return True
-
-    def move_forward(self, distance):
-        self.command_count += 1
-        rad = math.radians(self.heading)
-        old_x, old_y = self.x, self.y
-        proposed_x = self.x + distance * math.cos(rad)
-        proposed_y = self.y + distance * math.sin(rad)
-        
-        # Check if the move would take us outside the geofence
-        if self.geofence is not None and self.inside_fence:
-            if not self.is_point_in_polygon(proposed_x, proposed_y, self.geofence):
-                print(f"❌ Command #{self.command_count}: MOVE_FORWARD {distance:.2f} - BLOCKED by geofence")
-                print(f"⚠️ Position ({proposed_x:.3f}, {proposed_y:.3f}) would be outside the geofence")
+        # If we have enough history, check for being stuck
+        if len(self.position_history) >= 5:
+            # Calculate max distance moved in recent history
+            max_dist = 0
+            for pos in self.position_history:
+                dist = math.hypot(current_pos[0] - pos[0], current_pos[1] - pos[1])
+                max_dist = max(max_dist, dist)
                 
-                # Store the blocked direction to avoid repeatedly trying it
-                self.blocked_directions.add(int(self.heading / 10) * 10)
+            # If maximum movement is very small, we might be stuck
+            if max_dist < TOLERANCE/2:
+                self.stuck_count += 1
+                print(f"⚠️ Possible stuck condition detected ({self.stuck_count}/3)")
                 
-                # Calculate how far we can safely move
-                step = distance / 10
-                for i in range(1, 10):
-                    test_x = self.x + i * step * math.cos(rad)
-                    test_y = self.y + i * step * math.sin(rad)
-                    if not self.is_point_in_polygon(test_x, test_y, self.geofence):
-                        safe_distance = (i-1) * step
-                        if safe_distance > 0:
-                            print(f"🛑 Moving only {safe_distance:.2f} units to stay within bounds")
-                            self.x += safe_distance * math.cos(rad)
-                            self.y += safe_distance * math.sin(rad)
-                            self.history.append((self.x, self.y))
-                        return False
-                return False
-        
-        # Update position if allowed
-        self.x, self.y = proposed_x, proposed_y
-        self.history.append((self.x, self.y))
-        print(f"Command #{self.command_count}: MOVE_FORWARD {distance:.2f}")
-        print(f"➡️ Rover moved from ({old_x:.3f}, {old_y:.3f}) to ({self.x:.3f}, {self.y:.3f})")
-        self.update_fence_status()
-        
-        if self.waypoint:
-            self.report_status()
-            
-        return True
-
-    def rotate_by(self, angle_deg):
-        self.command_count += 1
-        old_heading = self.heading
-        self.heading = (self.heading + angle_deg) % 360
-        print(f"Command #{self.command_count}: ROTATE_BY {angle_deg:.1f}°")
-        print(f"🔄 Rover rotated from {old_heading:.1f}° to {self.heading:.1f}°")
-        if self.waypoint:
-            self.report_status()
-        return True
-
-    def calculate_heading_to(self, tx, ty):
-        dx, dy = tx - self.x, ty - self.y
-        return math.degrees(math.atan2(dy, dx)) % 360
-
-    def distance_to(self, tx, ty):
-        return math.hypot(tx - self.x, ty - self.y)
-
-    def set_waypoint(self, x, y):
-        self.waypoint = (x, y)
-        self.blocked_directions.clear()  # Clear blocked directions when setting new waypoint
-
-    def report_status(self):
-        if not self.waypoint:
-            print("\n--- STATUS REPORT ---")
-            print(f"📍 Position: ({self.x:.3f}, {self.y:.3f})")
-            print(f"🧭 Heading: {self.heading:.1f}°")
-            print("🎯 No waypoint set")
-            print(f"🔒 Inside geofence: {'Yes' if self.inside_fence else 'No'}")
-            print("---------------------\n")
-            return None, None
-        dist = self.distance_to(*self.waypoint)
-        desired = self.calculate_heading_to(*self.waypoint)
-        diff = (desired - self.heading + 180) % 360 - 180
-        print("\n--- STATUS REPORT ---")
-        print(f"📍 Position: ({self.x:.3f}, {self.y:.3f})")
-        print(f"🧭 Heading: {self.heading:.1f}°")
-        print(f"🎯 Distance to waypoint: {dist:.3f}")
-        print(f"🔄 Angle adj needed: {diff:.1f}°")
-        print(f"🔒 Inside geofence: {'Yes' if self.inside_fence else 'No'}")
-        print("---------------------\n")
-        return dist, diff
+                if self.stuck_count >= 3:
+                    print("🔄 Taking recovery action - making a significant turn")
+                    # Clear blocked directions and try a major direction change
+                    self.blocked_directions.clear()
+                    self.stuck_count = 0
+                    
+                    # Choose a recovery heading based on recent attempts
+                    recovery_angle = (self.heading + 120) % 360
+                    return recovery_angle
+            else:
+                # Reset stuck counter if we're moving
+                self.stuck_count = 0
+                
+        return None  # No stuck condition detected
 
 def safe_remove(element):
     """Safely remove a matplotlib element if it exists"""
@@ -190,210 +238,206 @@ def safe_remove(element):
             return False
     return False
 
-def visualize_turn(rover, target_heading, ax, fig):
-    """Visualize rover turning with error handling"""
-    curr = rover.heading
-    diff = (target_heading - curr + 180) % 360 - 180
-    if abs(diff) < 5:
-        return
-    
-    steps = max(5, min(36, abs(int(diff / 10))))
-    step_ang = diff / steps
+def create_rover_patch():
+    """Create a triangle patch to represent the rover"""
+    # Create a triangle pointing to the right (0 degrees heading)
+    rover_vertices = np.array([
+        [0.7, 0],    # Nose
+        [-0.3, 0.4], # Left wing
+        [-0.3, -0.4] # Right wing
+    ])
+    return Polygon(rover_vertices, closed=True, fc='blue', ec='black')
 
-    rad_t = math.radians(target_heading)
+def update_rover_visualization(rover, ax, fig, rover_patch=None):
+    """Update the visualization of the rover on the plot"""
+    if rover_patch is None:
+        # First time - create the rover patch
+        rover_patch = create_rover_patch()
+        ax.add_patch(rover_patch)
     
-    # Initialize visualization elements as None
-    targ = None
-    note = None
-    arrow = None
+    # Create a transform that rotates and positions the patch
+    tr = transforms.Affine2D().rotate_deg(rover.heading).translate(rover.x, rover.y)
+    rover_patch.set_transform(tr + ax.transData)
+    
+    # Update the path line if we have history
+    if hasattr(ax, 'path_line') and len(rover.history) > 1:
+        ax.path_line.set_data(*zip(*rover.history))
+    
+    # Update the plot
+    fig.canvas.draw_idle()
+    plt.pause(0.01)
+    
+    return rover_patch
+
+def visualize_turn(rover, new_heading, ax, fig, rover_patch=None):
+    """Visualize turning process with smooth animation"""
+    current = rover.heading
+    diff = (new_heading - current + 180) % 360 - 180
+    
+    # Skip visualization for tiny turns
+    if abs(diff) < 5:
+        rover.heading = new_heading
+        return update_rover_visualization(rover, ax, fig, rover_patch)
+    
+    # Print turning command
+    rover.command_count += 1
+    print(f"Cmd #{rover.command_count}: ROTATE_TO {new_heading:.1f}° ({diff:.1f}° turn)")
+    
+    if rover.waypoint:
+        waypoint_dist = rover.distance_to(*rover.waypoint)
+        print(f"   📏 Distance to waypoint: {waypoint_dist:.2f}m")
+    
+    # More smooth steps for larger rotations
+    steps = max(5, min(int(abs(diff) / 5), 36))  # Min 5, max 36 steps (10° increments for large turns)
+    angle_step = diff / steps
     
     try:
-        # Create target direction arrow
-        targ = ax.arrow(rover.x, rover.y,
-                      STEP * math.cos(rad_t),
-                      STEP * math.sin(rad_t),
-                      head_width=0.1, fc='red', ec='red', alpha=0.7)
-        
-        # Create annotation
-        note = ax.annotate(f"Turning {abs(diff):.1f}°",
-                         xy=(rover.x, rover.y),
-                         xytext=(rover.x+0.5, rover.y+0.5),
-                         arrowprops=dict(facecolor='black', shrink=0.05),
-                         fontsize=9)
-
-        # Animate the turn
-        for i in range(steps+1):
-            safe_remove(arrow)  # Remove previous arrow safely
+        for i in range(1, steps+1):
+            # Update heading
+            rover.heading = (current + angle_step * i) % 360
             
-            ang = (curr + i*step_ang) % 360
-            rad = math.radians(ang)
+            # Update visualization
+            rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
             
-            arrow = ax.arrow(rover.x, rover.y,
-                           STEP * math.cos(rad),
-                           STEP * math.sin(rad),
-                           head_width=0.1, fc='blue', ec='blue')
+            # Slight pause for animation
+            plt.pause(ANIMATION_SPEED)
             
-            # Update display
-            try:
-                fig.canvas.draw_idle()
-                plt.pause(0.05)
-            except Exception as e:
-                if DEBUG:
-                    print(f"Warning: Display update error: {e}")
-                break
-    
     except Exception as e:
         if DEBUG:
-            print(f"Warning: Visualization error: {e}")
-    
-    finally:
-        # Clean up all visualization elements
-        safe_remove(arrow)
-        safe_remove(targ)
-        safe_remove(note)
+            print(f"Turn visualization error: {e}")
+        rover.heading = new_heading
         
-        # Update rover heading even if visualization fails
-        rover.heading = target_heading
+    return update_rover_visualization(rover, ax, fig, rover_patch)
 
 def find_best_path_angle(rover, target_x, target_y, blocked_angles=None):
     """Find the best angle to move toward considering blocked paths"""
     direct_angle = rover.calculate_heading_to(target_x, target_y)
     
-    # If no angles are blocked or direct path isn't blocked, use it
+    # If direct path isn't blocked, use it
     if not blocked_angles or int(direct_angle / 10) * 10 not in blocked_angles:
         return direct_angle
     
     # Try angles in increasing offsets from the direct path
-    for offset in range(10, 180, 10):
+    for offset in range(10, 360, 10):  # Try full 360 degrees
         for direction in [1, -1]:  # Try both clockwise and counterclockwise
             test_angle = (direct_angle + direction * offset) % 360
             if int(test_angle / 10) * 10 not in blocked_angles:
                 return test_angle
     
-    # If all reasonable angles are blocked, just return a random unblocked angle
-    for angle in range(0, 360, 10):
-        if angle not in blocked_angles:
-            return angle
-    
-    # If everything is blocked (unlikely), return the direct angle
-    return direct_angle
+    # If all angles are blocked (unlikely), try random angles
+    import random
+    return random.randint(0, 359)
 
-def navigate_to_point(rover, target_x, target_y, ax, fig, path_line, step_size=STEP, tolerance=TOLERANCE):
-    """Navigate rover to a target point with visualization"""
+def navigate_to_point(rover, target_x, target_y, ax, fig, rover_patch=None, step_size=STEP, tolerance=TOLERANCE):
+    """Navigate rover to a target point with improved handling of difficult paths"""
     print(f"\n🚗 Navigating to point ({target_x:.3f}, {target_y:.3f})...\n")
     dist = rover.distance_to(target_x, target_y)
-    arrow = None
     attempts = 0
-    max_attempts = MAX_ATTEMPTS  # Prevent infinite loops
+    max_attempts = MAX_ATTEMPTS 
     consecutive_blocked = 0
-    last_dist = float('inf')  # Track if we're making progress
+    last_dist = float('inf')
+    approach_changed = False
+    
+    # Adaptive step size based on distance
+    adaptive_step = min(step_size, dist/2)
 
     while dist > tolerance and attempts < max_attempts:
         attempts += 1
         
-        # Check if we're making progress
-        if attempts % 10 == 0:
-            if dist > last_dist * 0.95:  # If we've reduced distance by less than 5%
-                print("⚠️ Limited progress detected, trying alternative approach...")
-                rover.blocked_directions.clear()  # Reset blocked directions
-                # Try a different approach angle
-                alternative_angle = (rover.heading + 90) % 360
-                visualize_turn(rover, alternative_angle, ax, fig)
-                rover.heading = alternative_angle
-            last_dist = dist
+        # Check for stuck condition and get recovery heading if needed
+        recovery_heading = rover.detect_and_resolve_stuck()
+        if recovery_heading is not None:
+            rover_patch = visualize_turn(rover, recovery_heading, ax, fig, rover_patch)
+            approach_changed = True
+            continue
         
+        # Periodic check if we're making progress
+        if attempts % 5 == 0:
+            # If we've made less than 5% progress, try a new approach
+            if dist > last_dist * 0.95:
+                if not approach_changed:
+                    print("⚠️ Limited progress detected, trying alternative approach...")
+                    rover.blocked_directions.clear()
+                    # Try a completely different approach angle
+                    alternative_angle = (rover.heading + 90 + attempts % 90) % 360
+                    rover_patch = visualize_turn(rover, alternative_angle, ax, fig, rover_patch)
+                    approach_changed = True
+                    
+                    # Try a larger step to break out of local minima
+                    adaptive_step = min(step_size * 2, dist/2)
+                else:
+                    # If we already changed approach, try a more random direction
+                    alternative_angle = (rover.heading + 180) % 360
+                    rover_patch = visualize_turn(rover, alternative_angle, ax, fig, rover_patch)
+                    
+                    # Try a larger step to break out of local minima
+                    adaptive_step = min(step_size * 3, dist/2)
+            else:
+                approach_changed = False
+                adaptive_step = min(step_size, dist/2)  # Reset to normal step
+                
+            last_dist = dist
+            
         # Find best heading considering blocked paths
-        if consecutive_blocked > 3:
+        if consecutive_blocked > 2:
             tgt_heading = find_best_path_angle(rover, target_x, target_y, rover.blocked_directions)
-            consecutive_blocked = 0  # Reset counter
+            consecutive_blocked = 0
         else:
             tgt_heading = rover.calculate_heading_to(target_x, target_y)
         
         heading_diff = (tgt_heading - rover.heading + 180) % 360 - 180
         
-        # If we need to adjust heading by more than 5 degrees
+        # If we need to adjust heading
         if abs(heading_diff) > 5:
-            visualize_turn(rover, tgt_heading, ax, fig)
-            rover.heading = tgt_heading
-            rover.command_count += 1
-            print(f"Cmd #{rover.command_count}: ROTATE_BY {heading_diff:.1f}° → {rover.heading:.1f}°")
-            safe_remove(arrow)  # Remove previous arrow safely
+            rover_patch = visualize_turn(rover, tgt_heading, ax, fig, rover_patch)
         
-        # Try to move forward
-        step = min(step_size, dist)
-        success = rover.move_forward(step)
+        # Try to move forward with adaptive step size
+        step = min(adaptive_step, dist)
+        success = rover.move_forward(step, ax, fig, rover_patch)
         
-        # Update visualization
+        # Update rover visualization
+        rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+        
+        # Update distance to target
         dist = rover.distance_to(target_x, target_y)
         
-        try:
-            # Update path line
-            if len(rover.history) > 0:
-                path_line.set_data(*zip(*rover.history))
-            
-            safe_remove(arrow)  # Remove previous arrow safely
-            
-            # Draw direction arrow
-            rad = math.radians(rover.heading)
-            arrow = ax.arrow(rover.x, rover.y,
-                         step_size * math.cos(rad),
-                         step_size * math.sin(rad),
-                         head_width=0.1, fc='blue', ec='blue')
-            
-            # Update display
-            fig.canvas.draw_idle()
-            plt.pause(0.05)
-        except Exception as e:
-            if DEBUG:
-                print(f"Warning: Visualization update error: {e}")
-        
-        # If movement was blocked, track it and try to navigate around
+        # Handle blocked movement
         if not success:
             consecutive_blocked += 1
-            if consecutive_blocked >= 3:
-                print("🔄 Multiple blockages detected, trying a more significant direction change...")
-                # Try a more significant turn to find a path
-                new_heading = (rover.heading + 45 + attempts % 4 * 15) % 360
-                visualize_turn(rover, new_heading, ax, fig)
-                rover.heading = new_heading
+            if consecutive_blocked >= 2:
+                # Try increasingly extreme direction changes
+                angle_change = 45 + (consecutive_blocked * 15)
+                if angle_change > 180:
+                    angle_change = 180
+                    
+                new_heading = (rover.heading + angle_change) % 360
+                rover_patch = visualize_turn(rover, new_heading, ax, fig, rover_patch)
         else:
-            consecutive_blocked = 0  # Reset counter on successful movement
-    
-    # Clean up the last arrow
-    safe_remove(arrow)
+            consecutive_blocked = 0
     
     if dist <= tolerance:
         print(f"✅ Reached target point ({rover.x:.3f}, {rover.y:.3f})")
-        return True
+        return True, rover_patch
     else:
-        print(f"⚠️ Could not reach target point. Current position: ({rover.x:.3f}, {rover.y:.3f})")
-        print(f"   Distance to target: {dist:.3f}")
-        return False
-
-# --- Input Helper Functions ---
-def get_float(prompt):
-    while True:
-        try:
-            return float(input(prompt))
-        except ValueError:
-            print("❌ Invalid number. Please try again.")
-
-def get_int(prompt):
-    while True:
-        try:
-            return int(input(prompt))
-        except ValueError:
-            print("❌ Invalid number. Please try again.")
-
-def get_bool(prompt):
-    while True:
-        response = input(prompt).lower()
-        if response in ["y", "yes"]:
-            return True
-        elif response in ["n", "no"]:
-            return False
+        # If we failed, try one final direct approach with larger step
+        print("🔄 Making final approach attempt with larger step size...")
+        
+        # Set heading directly to target
+        direct_heading = rover.calculate_heading_to(target_x, target_y)
+        rover_patch = visualize_turn(rover, direct_heading, ax, fig, rover_patch)
+        
+        # Try a direct move with larger step
+        rover.move_forward(dist * 0.9, ax, fig, rover_patch)
+        
+        # Check if we're now close enough
+        final_dist = rover.distance_to(target_x, target_y)
+        if final_dist <= tolerance * 1.5:  # Allow slightly larger tolerance for final check
+            print(f"✅ Reached target point on final attempt ({rover.x:.3f}, {rover.y:.3f})")
+            return True, rover_patch
         else:
-            print("❌ Please enter Y/N.")
+            print(f"⚠️ Could not reach target point. Current position: ({rover.x:.3f}, {rover.y:.3f})")
+            print(f"   Distance to target: {final_dist:.3f}")
+            return False, rover_patch
 
 # --- MAIN ---
 def main():
@@ -402,86 +446,56 @@ def main():
     
     rover = Rover()
 
-    # 1) Define geofence
-    print("🔧 Define geofence (farm boundary):")
-    print("   Choose: 1) Rectangle  2) Custom polygon")
-    fence_type = get_int("Choice (1/2): ")
+    # 1) Define rectangular farm boundary
+    print("🔧 Enter farm rectangle coordinates:")
+    min_x = get_float(" Min X: ")
+    max_x = get_float(" Max X: ")
+    min_y = get_float(" Min Y: ")
+    max_y = get_float(" Max Y: ")
+    
+    # Create rectangle vertices in clockwise order
+    geofence_vertices = [
+        (min_x, min_y),  # Bottom-left
+        (max_x, min_y),  # Bottom-right
+        (max_x, max_y),  # Top-right
+        (min_x, max_y)   # Top-left
+    ]
 
-    if fence_type == 1:
-        print("🔧 Enter farm rectangle coordinates:")
-        min_x = get_float(" Min X: ")
-        max_x = get_float(" Max X: ")
-        min_y = get_float(" Min Y: ")
-        max_y = get_float(" Max Y: ")
-        
-        # Create rectangle vertices in clockwise order
-        geofence_vertices = [
-            (min_x, min_y),  # Bottom-left
-            (max_x, min_y),  # Bottom-right
-            (max_x, max_y),  # Top-right
-            (min_x, max_y)   # Top-left
-        ]
-    else:
-        print("🔧 Enter number of fence vertices:")
-        num_vertices = get_int(" Number: ")
-        
-        geofence_vertices = []
-        print("🔧 Enter each vertex coordinate:")
-        for i in range(num_vertices):
-            x = get_float(f" Vertex {i+1} x: ")
-            y = get_float(f" Vertex {i+1} y: ")
-            geofence_vertices.append((x, y))
-
-    # Define entry point
-    print("🚪 Set farm entry point:")
-    print("   1) Use first vertex  2) Custom entry point")
-    entry_choice = get_int("Choice (1/2): ")
-
-    if entry_choice == 1:
-        entry_point = geofence_vertices[0]
-    else:
-        print("🔧 Enter entry point coordinates:")
-        entry_x = get_float(" Entry X: ")
-        entry_y = get_float(" Entry Y: ")
-        entry_point = (entry_x, entry_y)
+    # Define entry point (always use first vertex - bottom left corner)
+    entry_point = geofence_vertices[0]
+    print(f"🚪 Entry point set to bottom-left corner: ({entry_point[0]:.2f}, {entry_point[1]:.2f})")
 
     # Set the geofence for the rover
     rover.set_geofence(geofence_vertices, entry_point)
 
     # 2) User inputs for positioning and waypoint
-    print("🔧 Enter starting position (outside the farm):")
-    x1 = get_float(" x1: ")
-    y1 = get_float(" y1: ")
+    print("🔧 Enter starting position:")
+    
+    # CHANGE: Keep asking for valid starting position until one outside farm is provided
+    while True:
+        x1 = get_float(" x1: ")
+        y1 = get_float(" y1: ")
+        
+        if rover.is_point_in_polygon(x1, y1, geofence_vertices):
+            print("⚠️ Starting point must be outside the farm. Please enter new coordinates.")
+        else:
+            break
+            
+    print(f"✅ Valid starting position: ({x1:.2f}, {y1:.2f})")
 
-    # Ensure starting point is outside the farm
-    if rover.is_point_in_polygon(x1, y1, geofence_vertices):
-        print("⚠️ Starting point is inside the farm. Try again with a point outside.")
-        outside_farm = False
-        while not outside_farm:
-            x1 = get_float(" New x1 (outside farm): ")
-            y1 = get_float(" New y1 (outside farm): ")
-            outside_farm = not rover.is_point_in_polygon(x1, y1, geofence_vertices)
-            if outside_farm:
-                print("✅ Starting point is outside the farm.")
-            else:
-                print("⚠️ Still inside the farm. Try again.")
-
-    print("🔧 Enter waypoint coords (inside the farm):")
-    wx = get_float(" wx: ")
-    wy = get_float(" wy: ")
-
-    # Ensure waypoint is inside the farm
-    if not rover.is_point_in_polygon(wx, wy, geofence_vertices):
-        print("⚠️ Waypoint is outside the farm. Try again with a point inside.")
-        inside_farm = False
-        while not inside_farm:
-            wx = get_float(" New wx (inside farm): ")
-            wy = get_float(" New wy (inside farm): ")
-            inside_farm = rover.is_point_in_polygon(wx, wy, geofence_vertices)
-            if inside_farm:
-                print("✅ Waypoint is inside the farm.")
-            else:
-                print("⚠️ Still outside the farm. Try again.")
+    print("🔧 Enter waypoint coords:")
+    
+    # CHANGE: Keep asking for valid waypoint until one inside farm is provided
+    while True:
+        wx = get_float(" wx: ")
+        wy = get_float(" wy: ")
+        
+        if not rover.is_point_in_polygon(wx, wy, geofence_vertices):
+            print("⚠️ Waypoint must be inside the farm. Please enter new coordinates.")
+        else:
+            break
+            
+    print(f"✅ Valid waypoint: ({wx:.2f}, {wy:.2f})")
 
     rover.set_waypoint(wx, wy)
 
@@ -490,10 +504,10 @@ def main():
         plt.ion()
         fig, ax = plt.subplots(figsize=(10, 8))
 
-        # Calculate plot boundaries based on all points
+        # Calculate plot boundaries
         all_x = [v[0] for v in geofence_vertices] + [x1, wx, entry_point[0]]
         all_y = [v[1] for v in geofence_vertices] + [y1, wy, entry_point[1]]
-        margin = 1.5  # Add some margin
+        margin = 2.0  # Larger margin
 
         mx, Mx = min(all_x) - margin, max(all_x) + margin
         my, My = min(all_y) - margin, max(all_y) + margin
@@ -501,6 +515,7 @@ def main():
         ax.set_xlim(mx, Mx)
         ax.set_ylim(my, My)
         ax.grid(True)
+        ax.set_title("Rover Farm Navigation Simulation")
 
         # Draw geofence
         geofence_array = np.array(geofence_vertices)
@@ -518,54 +533,81 @@ def main():
 
         # Path line for rover's movement history
         path_line, = ax.plot([], [], 'b-', alpha=0.5, label='Path')
+        ax.path_line = path_line  # Store reference to path line
         ax.legend(loc='upper left')
-        fig.canvas.draw_idle()
-        plt.pause(0.5)  # Longer pause to show initial setup
-    except Exception as e:
-        print(f"Error in plot setup: {e}")
-        print("Continuing with limited visualization...")
-        # Create minimal plot for path tracking
-        fig, ax = plt.subplots(figsize=(8, 6))
-        path_line, = ax.plot([], [], 'b-')
-        ax.set_title("Rover Navigation (Limited View)")
-        fig.canvas.draw_idle()
-
-    # 4) Set initial position without adding to history
-    rover.set_position(x1, y1, force=True, add_to_history=False)  # Don't add to history yet
-    
-    # 5) First, navigate to the farm entry point
-    print("\n🚜 Moving rover from outside farm to entry point...\n")
-    
-    # Now add the starting position to history - this is the first point in the path
-    rover.history.append((rover.x, rover.y))
-    
-    try:
-        path_line.set_data(*zip(*rover.history))
         fig.canvas.draw_idle()
         plt.pause(0.5)
     except Exception as e:
-        if DEBUG:
-            print(f"Visualization error: {e}")
-    
-    entry_reached = navigate_to_point(rover, entry_point[0], entry_point[1], ax, fig, path_line)
+        print(f"Error in plot setup: {e}")
+        print("Continuing with limited visualization...")
+        # Create minimal plot
+        fig, ax = plt.subplots(figsize=(8, 6))
+        path_line, = ax.plot([], [], 'b-')
+        ax.path_line = path_line
+        ax.set_title("Rover Navigation (Limited View)")
+        fig.canvas.draw_idle()
 
+    # 4) Set initial position
+    rover.set_position(x1, y1, force=True, add_to_history=False)
+    rover.history.append((rover.x, rover.y))
+    
+    # Create initial rover visualization
+    rover_patch = update_rover_visualization(rover, ax, fig)
+    
+    # 5) Navigate to the farm entry point
+    print("\n🚜 Moving rover from outside farm to entry point...\n")
+    print(f"📏 Initial distance to entry point: {rover.distance_to(*entry_point):.2f}m")
+    
+    # Try entry point navigation with increasing max attempts and step sizes
+    for attempt in range(1, 4):
+        print(f"\n🔄 Entry point navigation attempt {attempt}/3...")
+        entry_reached, rover_patch = navigate_to_point(
+            rover, entry_point[0], entry_point[1], ax, fig, rover_patch,
+            step_size=STEP * attempt, tolerance=TOLERANCE
+        )
+        
+        if entry_reached:
+            break
+            
+        if attempt < 3:
+            # Reset blocked directions and try again
+            rover.blocked_directions.clear() 
+            print("🔄 Retrying entry point navigation with new parameters...")
+    
     if entry_reached:
         try:
             # Add marker for entry confirmation
             ax.scatter(rover.x, rover.y, c='cyan', s=80, marker='^', label='Entry Reached')
             ax.legend(loc='upper left')
             fig.canvas.draw_idle()
-            plt.pause(1.0)  # Longer pause to highlight entry
+            plt.pause(1.0)
         except Exception as e:
             if DEBUG:
                 print(f"Visualization error: {e}")
         
         # Clear blocked directions before starting next navigation
         rover.blocked_directions.clear()
+        rover.position_history.clear()
         
-        # 6) Now navigate to the waypoint inside the farm
+        # 6) Navigate to the waypoint inside the farm
         print("\n🚜 Moving rover to waypoint inside farm...\n")
-        waypoint_reached = navigate_to_point(rover, wx, wy, ax, fig, path_line)
+        print(f"📏 Initial distance to waypoint: {rover.distance_to(*rover.waypoint):.2f}m")
+        
+        # Try waypoint navigation with increasing max attempts and step sizes
+        for attempt in range(1, 4):
+            print(f"\n🔄 Waypoint navigation attempt {attempt}/3...")
+            waypoint_reached, rover_patch = navigate_to_point(
+                rover, wx, wy, ax, fig, rover_patch,
+                step_size=STEP * attempt, tolerance=TOLERANCE
+            )
+            
+            if waypoint_reached:
+                break
+                
+            if attempt < 3:
+                # Reset blocked directions and try again
+                rover.blocked_directions.clear()
+                print("🔄 Retrying waypoint navigation with new parameters...")
         
         if waypoint_reached:
             try:
@@ -580,15 +622,17 @@ def main():
                     
             print(f"\n✅ Mission complete! Reached waypoint in {rover.command_count} commands.")
         else:
-            print("\n⚠️ Could not reach waypoint.")
+            print("\n⚠️ Could not reach waypoint after multiple attempts.")
+            print("   Consider adjusting sim parameters or waypoint location.")
     else:
-        print("\n⚠️ Could not reach farm entry point.")
+        print("\n⚠️ Could not reach farm entry point after multiple attempts.")
+        print("   Consider adjusting sim parameters or entry point location.")
 
     # Final plot display
     try:
         plt.ioff()
         plt.title("Rover Farm Navigation Simulation")
-        plt.show()
+        plt.show(block=True)
     except Exception as e:
         print(f"Error in final plot display: {e}")
         print("Simulation completed without final visualization.")
