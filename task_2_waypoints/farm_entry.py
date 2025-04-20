@@ -4,9 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Polygon
 import matplotlib.transforms as transforms
+from farm_safety import SafetyModule
+safety = SafetyModule()
+
 
 # --- Constants ---
-STEP = 0.5  # Increased for faster navigation
+STEP = 0.2  # Increased for faster navigation
 TOLERANCE = 0.5  # Increased tolerance for reaching targets
 MAX_ATTEMPTS = 200  # Increased maximum attempts
 DEBUG = False
@@ -250,28 +253,77 @@ def navigate_to_point(rover, tx, ty, ax, fig, rover_patch=None, step_size=STEP, 
         if abs(diff)>5:
             rover_patch=visualize_turn(rover,tgt,ax,fig,rover_patch)
         step=min(step_size,dist)
-        ok=rover.move_forward(step,ax,fig,rover_patch)
-        rover_patch=update_rover_visualization(rover,ax,fig,rover_patch)
-        dist=rover.distance_to(tx,ty)
+        
+        # Set up movement parameters
+        target_x = rover.x + step * math.cos(math.radians(rover.heading))
+        target_y = rover.y + step * math.sin(math.radians(rover.heading))
+        path = [(rover.x, rover.y), (target_x, target_y)]
+        
+        # Safety check before movement
+        status, recovery_data = safety.check_safety([rover.x, rover.y], rover.heading, path)
+        
+        ok = False  # Default to unsuccessful movement
+        if status == 'safe':
+            # Safe to proceed with normal movement
+            ok = rover.move_forward(step, ax, fig, rover_patch)
+        elif status == 'drift':
+            # Handle drift scenario
+            pos, heading, drift_status, updated_data = safety.handle_drift(
+                [rover.x, rover.y], rover.heading, recovery_data)
+            
+            # Update rover position and visualize
+            rover.set_position(pos[0], pos[1], heading, add_to_history=True)
+            rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+            
+            # Update drift data or clear it if recovered
+            if drift_status == 'recovered':
+                ok = True
+            else:
+                recovery_data = updated_data
+                ok = False
+                blocked += 1
+        elif status in ['no-go', 'outside']:
+            # Handle no-go zone or boundary violation
+            pos, heading, violation_status = safety.handle_no_go_violation(
+                [rover.x, rover.y], rover.heading, recovery_data)
+            
+            # Update rover position and visualize
+            rover.set_position(pos[0], pos[1], heading, add_to_history=True)
+            rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+            
+            if violation_status == 'recovered':
+                ok = True
+            else:
+                ok = False
+                blocked += 1
+        
+        # Update visualization
+        rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+        dist = rover.distance_to(tx, ty)
+        
         if not ok:
-            blocked+=1
-            if blocked>=2:
-                ch=45+blocked*15
-                ch=min(ch,180)
-                rover_patch=visualize_turn(rover,(rover.heading+ch)%360,ax,fig,rover_patch)
+            blocked += 1
+            if blocked >= 2:
+                ch = 45 + blocked * 15
+                ch = min(ch, 180)
+                rover_patch = visualize_turn(rover, (rover.heading + ch) % 360, ax, fig, rover_patch)
         else:
-            blocked=0
-    if dist<=tolerance:
+            blocked = 0
+            
+    if dist <= tolerance:
         print(f"✅ Reached target point ({rover.x:.3f}, {rover.y:.3f})")
         return True, rover_patch
+        
     print("🔄 Making final approach attempt with larger step size...")
-    direct = rover.calculate_heading_to(tx,ty)
-    rover_patch=visualize_turn(rover,direct,ax,fig,rover_patch)
-    rover.move_forward(dist*0.9,ax,fig,rover_patch)
-    fd=rover.distance_to(tx,ty)
-    if fd<=tolerance*1.5:
+    direct = rover.calculate_heading_to(tx, ty)
+    rover_patch = visualize_turn(rover, direct, ax, fig, rover_patch)
+    rover.move_forward(dist * 0.9, ax, fig, rover_patch)
+    fd = rover.distance_to(tx, ty)
+    
+    if fd <= tolerance * 1.5:
         print(f"✅ Reached target point on final attempt ({rover.x:.3f}, {rover.y:.3f})")
         return True, rover_patch
+        
     print(f"⚠️ Could not reach target point. Current position: ({rover.x:.3f}, {rover.y:.3f})")
     print(f"   Distance to target: {fd:.3f}")
     return False, rover_patch
@@ -312,7 +364,8 @@ def main():
         ax.set_title("Rover Farm Navigation Simulation")
         fence = Polygon(np.array(verts),closed=True,facecolor='lightgreen',edgecolor='darkgreen',alpha=0.3)
         ax.add_patch(fence)
-        ax.scatter(entry[0],entry[1],c='purple',s=100,marker='o',label='Farm Entry')
+        # Place entry point marker on top (zorder=10)
+        ax.scatter(entry[0],entry[1],c='purple',s=100,marker='o',label='Farm Entry',zorder=10)
         ax.scatter(x1,y1,c='green',s=80,label='Start (Outside)')
         ax.scatter(wx,wy,c='red',s=120,marker='*',label='Waypoint')
         pl,=ax.plot([],[], 'b-',alpha=0.5,label='Path'); ax.path_line=pl; ax.legend(loc='upper left')
@@ -334,7 +387,9 @@ def main():
             rover.blocked_directions.clear(); print("🔄 Retrying entry point navigation with new parameters...")
     if reached:
         try:
-            ax.scatter(rover.x,rover.y,c='cyan',s=80,marker='^',label='Entry Reached'); ax.legend(loc='upper left'); fig.canvas.draw_idle(); plt.pause(1)
+            # Remove the "point reached" visualization marker - just draw and pause
+            fig.canvas.draw_idle(); plt.pause(0.5)
+            # Notice we removed the scatter() call that would add a marker
         except: pass
         rover.blocked_directions.clear(); rover.position_history.clear()
         print("\n🚜 Moving rover to waypoint inside farm...\n")
@@ -361,6 +416,7 @@ def main():
     except Exception as e:
         print(f"Error in final plot display: {e}")
         print("Simulation completed without final visualization.")
+
 
 if __name__ == "__main__":
     try:
