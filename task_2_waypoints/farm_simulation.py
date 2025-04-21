@@ -35,13 +35,43 @@ def run_simulation():
     
     # Create vertices for the farm boundary
     verts = [(min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)]
-    entry_point = verts[0]  # Bottom-left corner as entry point
-    print(f"🚪 Entry point set to bottom-left corner: ({entry_point[0]:.3f}, {entry_point[1]:.3f})")
+    
+    # Allow user to manually input entry point on farm border
+    print("\n🚪 Enter farm entry point coordinates (must be on farm border):")
+    print(f"  Valid X range: {min_x} to {max_x}")
+    print(f"  Valid Y range: {min_y} to {max_y}")
+    print("  The point must be exactly on one of the farm boundary lines.")
+    
+    while True:
+        entry_x = get_float(" Entry point X: ")
+        entry_y = get_float(" Entry point Y: ")
+        
+        # Check if point is on the border of the farm
+        on_border = False
+        
+        # Check if point is on horizontal borders
+        if (min_x <= entry_x <= max_x) and (entry_y == min_y or entry_y == max_y):
+            on_border = True
+            
+        # Check if point is on vertical borders
+        elif (min_y <= entry_y <= max_y) and (entry_x == min_x or entry_x == max_x):
+            on_border = True
+            
+        if on_border:
+            print(f"✅ Valid entry point: ({entry_x:.2f}, {entry_y:.2f})")
+            break
+        else:
+            print("⚠️ Entry point must be exactly on the farm border. Please try again.")
+    
+    entry_point = (entry_x, entry_y)
     
     # Set geofence in rover
     rover.set_geofence(verts, entry_point)
     # Set farm boundary in safety module
     safety.set_geofence(verts)
+
+    # Rest of the code continues as before...
+    
 
    # Modified A* integration code that properly handles visualization scopes
 # Place this in the run_simulation function after the farm boundary setup
