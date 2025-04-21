@@ -210,7 +210,7 @@ class RowNavigator:
             # Move a larger step toward the target
             move_dist = min(step_size, dist_to_target)
 
-# Calculate the target position based on heading and move distance
+            # Calculate the target position based on heading and move distance
             target_x = self.rover.x + move_dist * math.cos(math.radians(self.rover.heading))
             target_y = self.rover.y + move_dist * math.sin(math.radians(self.rover.heading))
             path = [(self.rover.x, self.rover.y), (target_x, target_y)]
@@ -242,7 +242,7 @@ class RowNavigator:
                         print(f"🔄 Drift corrected: New heading {heading:.1f}°")
 
             elif status in ['no-go', 'outside']:
-    # Handle no-go zone or boundary violation
+                # Handle no-go zone or boundary violation
                 pos, heading, violation_status = safety.handle_no_go_violation(
                     [self.rover.x, self.rover.y], self.rover.heading, recovery_data)
                 
@@ -256,7 +256,6 @@ class RowNavigator:
                     rover_patch = update_rover_visualization(self.rover, ax, fig, rover_patch)
                     plt.pause(0.01)
                     print(f"⚠️ Safety violation handled: {violation_status}")            
-
 
             if not success:
                 print("⚠️ Movement blocked, attempting to adjust")
@@ -283,28 +282,31 @@ class RowNavigator:
         print(f"   Current position: ({self.rover.x:.3f}, {self.rover.y:.3f})")
         return False
     
-    def navigate_direct_to_closest(self, ax=None, fig=None, rover_patch=None):
-    
-       closest_point = self.find_closest_waypoint()
-       if not closest_point:
-         return False
+    def navigate_to_starting_point(self, ax=None, fig=None, rover_patch=None):
+        """Navigate directly to the starting point (first waypoint) of the path"""
+        if not self.interpolated_path:
+            print("⚠️ No path generated")
+            return False
         
-       print(f"\n🚜 Navigating directly to closest point on path: ({closest_point[0]:.3f}, {closest_point[1]:.3f})")
-    
-    # Set the rover position directly to the closest point (teleport)
-       self.rover.x = closest_point[0]
-       self.rover.y = closest_point[1]
-    
-    # Update visualization if available
-       if ax and fig and rover_patch:
-         from farm_entry import update_rover_visualization
-         rover_patch = update_rover_visualization(self.rover, ax, fig, rover_patch)
-         plt.pause(0.01)
-
-       print(f"✅ Successfully reached the closest waypoint #{self.current_waypoint_index}")
-       print(f"   Final position: ({self.rover.x:.3f}, {self.rover.y:.3f})")
-       return True
-
+        # Get the starting point (first waypoint)
+        starting_point = self.interpolated_path[0]
+        
+        print(f"\n🚜 Navigating to starting point: ({starting_point[0]:.3f}, {starting_point[1]:.3f})")
+        print(f"   Current position: ({self.rover.x:.3f}, {self.rover.y:.3f})")
+        print(f"   Distance: {self.distance((self.rover.x, self.rover.y), starting_point):.3f}m")
+        
+        # Move precisely to the starting point
+        result = self.move_precisely_to_point(starting_point, ax, fig, rover_patch)
+        
+        if result:
+            # Update current waypoint index to the starting point
+            self.current_waypoint_index = 0
+            print(f"✅ Successfully reached the starting point")
+            print(f"   Final position: ({self.rover.x:.3f}, {self.rover.y:.3f})")
+        else:
+            print(f"⚠️ Failed to reach starting point")
+        
+        return result
 
     def determine_next_task(self):
         """Task 2.i: Determine the next task (next waypoint in the row)"""
@@ -355,13 +357,13 @@ class RowNavigator:
             print("⚠️ No path generated - call generate_rows first")
             return False
             
-        # Task 1: Navigate directly to the closest point (no intermediate points)
-        print("\n📋 Task 1: Navigate directly to closest point on path")
-        if not self.navigate_direct_to_closest(ax, fig, rover_patch):
-            print("⚠️ Failed to reach the closest waypoint. Aborting.")
+        # Task 1: Navigate directly to the starting point of the path
+        print("\n📋 Task 1: Navigate directly to starting point of path")
+        if not self.navigate_to_starting_point(ax, fig, rover_patch):
+            print("⚠️ Failed to reach the starting point. Aborting.")
             return False
         
-        # Now at closest point (start of row), proceed with next tasks
+        # Now at starting point, proceed with next tasks
         
         # Task 2.i: Determine next task
         next_point = self.determine_next_task()

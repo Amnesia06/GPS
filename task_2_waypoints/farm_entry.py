@@ -328,7 +328,6 @@ def navigate_to_point(rover, tx, ty, ax, fig, rover_patch=None, step_size=STEP, 
     print(f"   Distance to target: {fd:.3f}")
     return False, rover_patch
 
-# --- MAIN ---
 def main():
     plt.rcParams['figure.max_open_warning'] = 50
     rover = Rover()
@@ -338,9 +337,37 @@ def main():
     min_y = get_float(" Min Y: ")
     max_y = get_float(" Max Y: ")
     verts = [(min_x,min_y),(max_x,min_y),(max_x,max_y),(min_x,max_y)]
-    entry = verts[0]
-    print(f"🚪 Entry point set to bottom-left corner: ({entry[0]:.2f}, {entry[1]:.2f})")
-    rover.set_geofence(verts,entry)
+    
+    # Allow user to manually input entry point on farm border
+    print("\n🚪 Enter farm entry point coordinates (must be on farm border):")
+    print(f"  Valid X range: {min_x} to {max_x}")
+    print(f"  Valid Y range: {min_y} to {max_y}")
+    print("  The point must be exactly on one of the farm boundary lines.")
+    
+    while True:
+        entry_x = get_float(" Entry point X: ")
+        entry_y = get_float(" Entry point Y: ")
+        
+        # Check if point is on the border of the farm
+        on_border = False
+        
+        # Check if point is on horizontal borders
+        if (min_x <= entry_x <= max_x) and (entry_y == min_y or entry_y == max_y):
+            on_border = True
+            
+        # Check if point is on vertical borders
+        elif (min_y <= entry_y <= max_y) and (entry_x == min_x or entry_x == max_x):
+            on_border = True
+            
+        if on_border:
+            print(f"✅ Valid entry point: ({entry_x:.2f}, {entry_y:.2f})")
+            break
+        else:
+            print("⚠️ Entry point must be exactly on the farm border. Please try again.")
+    
+    entry = (entry_x, entry_y)
+    rover.set_geofence(verts, entry)
+    
     print("🔧 Enter starting position:")
     while True:
         x1=get_float(" x1: "); y1=get_float(" y1: ")
@@ -355,7 +382,6 @@ def main():
             print("⚠️ Waypoint must be inside the farm. Please enter new coordinates.")
         else: break
     print(f"✅ Valid waypoint: ({wx:.2f}, {wy:.2f})")
-    rover.set_waypoint(wx,wy)
     try:
         plt.ion(); fig, ax = plt.subplots(figsize=(10,8))
         xs=[v[0] for v in verts]+[x1,wx,entry[0]]; ys=[v[1] for v in verts]+[y1,wy,entry[1]]
@@ -373,49 +399,12 @@ def main():
     except Exception as e:
         print(f"Error in plot setup: {e}")
         fig, ax = plt.subplots(figsize=(8,6)); pl,=ax.plot([]); ax.path_line=pl; ax.set_title("Rover Navigation (Limited View)")
+    
     rover.set_position(x1,y1,force=True,add_to_history=False)
     rover.history.append((rover.x,rover.y))
     rover_patch = update_rover_visualization(rover,ax,fig)
     print("\n🚜 Moving rover from outside farm to entry point...\n")
     print(f"📏 Initial distance to entry point: {rover.distance_to(*entry):.2f}m")
-    for attempt in range(1,4):
-        print(f"\n🔄 Entry point navigation attempt {attempt}/3...")
-        reached, rover_patch = navigate_to_point(rover, entry[0],entry[1],ax,fig,rover_patch, step_size=STEP*attempt, tolerance=TOLERANCE)
-        if reached:
-            break
-        if attempt<3:
-            rover.blocked_directions.clear(); print("🔄 Retrying entry point navigation with new parameters...")
-    if reached:
-        try:
-            # Remove the "point reached" visualization marker - just draw and pause
-            fig.canvas.draw_idle(); plt.pause(0.5)
-            # Notice we removed the scatter() call that would add a marker
-        except: pass
-        rover.blocked_directions.clear(); rover.position_history.clear()
-        print("\n🚜 Moving rover to waypoint inside farm...\n")
-        print(f"📏 Initial distance to waypoint: {rover.distance_to(*rover.waypoint):.2f}m")
-        for attempt in range(1,4):
-            print(f"\n🔄 Waypoint navigation attempt {attempt}/3...")
-            ok, rover_patch = navigate_to_point(rover, wx,wy,ax,fig,rover_patch, step_size=STEP*attempt, tolerance=TOLERANCE)
-            if ok: break
-            if attempt<3:
-                rover.blocked_directions.clear(); print("🔄 Retrying waypoint navigation with new parameters...")
-        if ok:
-            try:
-                ax.scatter(rover.x,rover.y,c='magenta',s=100,marker='o',label='Final Position'); ax.legend(loc='upper left'); fig.canvas.draw_idle(); plt.pause(0.5)
-            except: pass
-            print(f"\n✅ Mission complete! Reached waypoint in {rover.command_count} commands.")
-        else:
-            print("\n⚠️ Could not reach waypoint after multiple attempts.")
-            print("   Consider adjusting sim parameters or waypoint location.")
-    else:
-        print("\n⚠️ Could not reach farm entry point after multiple attempts.")
-        print("   Consider adjusting sim parameters or entry point location.")
-    try:
-        plt.ioff(); plt.title("Rover Farm Navigation Simulation"); plt.show(block=True)
-    except Exception as e:
-        print(f"Error in final plot display: {e}")
-        print("Simulation completed without final visualization.")
 
 
 if __name__ == "__main__":
@@ -427,3 +416,11 @@ if __name__ == "__main__":
         print(f"\n❌ Simulation error: {e}")
         if DEBUG:
             import traceback; traceback.print_exc()
+
+
+
+
+
+
+
+

@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import math
-import time
+from astar_algo import AStarPlanner
 
 # Import our modules
-from farm_entry import Rover, update_rover_visualization, visualize_turn, navigate_to_point
+from farm_entry import Rover, update_rover_visualization, visualize_turn, navigate_to_point, TOLERANCE
 from row_navigation import RowNavigator
 from farm_safety import SafetyModule
 safety = SafetyModule()
@@ -43,6 +42,98 @@ def run_simulation():
     rover.set_geofence(verts, entry_point)
     # Set farm boundary in safety module
     safety.set_geofence(verts)
+
+   # Modified A* integration code that properly handles visualization scopes
+# Place this in the run_simulation function after the farm boundary setup
+# and before the "Navigate to entry point" section
+
+    def integrate_astar_planner(rover, safety, entry_point, ax, fig, rover_patch):
+        """
+        Integrates the A* planner into the simulation with proper visualization scope
+        Returns: reached_entry (bool), updated_rover_patch
+        """
+        # Create and configure the A* planner with appropriate parameters
+        print("\n🗺️ Setting up A* path planner for navigating to entry point...")
+        planner = AStarPlanner(rover, safety, cell_size=0.2, padding=2.5)
+        print(f"🔍 Grid dimensions: {planner.ny}x{planner.nx} cells")
+        print(f"📊 Start cell: {planner.start}, Goal cell: {planner.goal}")
+        
+        # Optional: Visualize the grid for debugging (in a separate figure)
+        try:
+            grid_fig, grid_ax = plt.subplots(figsize=(8, 6))
+            planner.visualize_grid(grid_ax)
+            grid_fig.canvas.draw_idle()
+            plt.pause(0.5)
+        except Exception as e:
+            print(f"Note: Grid visualization skipped: {e}")
+        
+        # Plan the path
+        print("\n🔄 Computing optimal path to entry point...")
+        waypoints = planner.plan()
+        
+        if waypoints:
+            print(f"✅ A* found a path with {len(waypoints)} waypoints:")
+            for i, (wx, wy) in enumerate(waypoints):
+                if i == 0:
+                    print(f"   Start: ({wx:.2f}, {wy:.2f})")
+                elif i == len(waypoints) - 1:
+                    print(f"   Goal: ({wx:.2f}, {wy:.2f})")
+                elif i < 5 or i > len(waypoints) - 5:
+                    print(f"   Waypoint {i}: ({wx:.2f}, {wy:.2f})")
+                elif i == 5 and len(waypoints) > 10:
+                    print(f"   ... {len(waypoints) - 10} more waypoints ...")
+            
+            # Visualize the planned path on the main figure
+            path_x, path_y = zip(*waypoints)
+            ax.plot(path_x, path_y, 'y--', linewidth=2, alpha=0.7, label='Planned Path')
+            ax.legend(loc='upper left')
+            fig.canvas.draw_idle()
+            plt.pause(0.5)
+            
+            print("\n🚜 Following A* path to entry point...")
+            # Skip the first waypoint (current position)
+            for i, (wx, wy) in enumerate(waypoints[1:], 1):
+                print(f"\n📍 Moving to waypoint {i}/{len(waypoints)-1}: ({wx:.2f}, {wy:.2f})")
+                reached, rover_patch = navigate_to_point(rover, wx, wy, ax, fig, rover_patch)
+                
+                # Update visualization
+                fig.canvas.draw_idle()
+                plt.pause(0.2)
+                
+                if not reached:
+                    print(f"⚠️ Failed to reach waypoint {i}. Attempting to continue to next waypoint.")
+                    # If we've been stuck on consecutive waypoints, regenerate path from current position
+                    if i > 1 and not reached:
+                        print("🔄 Replanning path from current position...")
+                        # Reinitialize planner with current position
+                        planner = AStarPlanner(rover, safety, cell_size=0.2, padding=2.5)
+                        new_waypoints = planner.plan()
+                        
+                        if new_waypoints and len(new_waypoints) > 1:
+                            print(f"✅ Found new path with {len(new_waypoints)} waypoints")
+                            # Replace remaining waypoints with new plan
+                            waypoints = waypoints[:i] + new_waypoints[1:]
+            
+            # Check if we reached the entry point
+            if rover.distance_to(*entry_point) <= TOLERANCE:
+                print("\n🎯 Successfully reached entry point using A* navigation!")
+                return True, rover_patch
+            else:
+                print(f"\n⚠️ A* navigation terminated {rover.distance_to(*entry_point):.2f}m from entry point.")
+                print("🔄 Attempting direct navigation for final approach...")
+                
+                # Final direct approach to entry point
+                reached_entry, rover_patch = navigate_to_point(
+                    rover, entry_point[0], entry_point[1], ax, fig, rover_patch)
+                return reached_entry, rover_patch
+        else:
+            print("⚠️ A* failed to find a path—falling back to direct navigate_to_point.")
+            # Use the original direct navigation as fallback
+            reached_entry, rover_patch = navigate_to_point(
+                rover, entry_point[0], entry_point[1], ax, fig, rover_patch)
+            return reached_entry, rover_patch
+
+
 
 # Add no-go zones if needed
 # For example, to add a rectangular no-go zone in the middle of the farm:
@@ -100,22 +191,24 @@ def run_simulation():
     print("\n🚜 TASK 1: Moving rover from outside farm to entry point...\n")
     print(f"📏 Initial distance to entry point: {rover.distance_to(*entry_point):.3f}m")
     
-    # Navigate to entry point
-    reached_entry = False
-    for attempt in range(1, 4):
-        print(f"\n🔄 Entry point navigation attempt {attempt}/3...")
-        reached_entry, rover_patch = navigate_to_point(
-            rover, entry_point[0], entry_point[1], ax, fig, rover_patch)
-        if reached_entry:
-            break
-        if attempt < 3:
-            rover.blocked_directions.clear()
-            print("🔄 Retrying entry point navigation with new parameters...")
-    
+    reached_entry, rover_patch = integrate_astar_planner(rover, safety, entry_point, ax, fig, rover_patch)
+
     if not reached_entry:
         print("\n⚠️ Could not reach farm entry point after multiple attempts.")
         print("   Try adjusting simulation parameters or entry point location.")
         return
+
+    # Force rover position to exactly match entry point
+    rover.set_position(entry_point[0], entry_point[1], force=True)
+    rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+
+    # Mark entry point reached
+    ax.scatter(entry_point[0], entry_point[1], c='cyan', s=80, marker='^', label='Entry Reached')
+    ax.legend(loc='upper left')
+    fig.canvas.draw_idle()
+    plt.pause(1)
+    print("\n✅ TASK 1 COMPLETE: Successfully entered the farm")
+    print(f"   Current position: ({rover.x:.3f}, {rover.y:.3f})")
     
     # Force rover position to exactly match entry point
     rover.set_position(entry_point[0], entry_point[1], force=True)
@@ -183,7 +276,7 @@ def run_simulation():
     
     # Mark the closest point
     closest_point = navigator.interpolated_path[navigator.current_waypoint_index]
-    ax.scatter(closest_point[0], closest_point[1], c='yellow', s=60, marker='*', label='Closest Point')
+    ax.scatter(closest_point[0], closest_point[1], c='yellow', s=60, marker='*', label='Starting Point0')
     ax.legend(loc='upper left')
     fig.canvas.draw_idle()
     plt.pause(0.5)
@@ -267,3 +360,11 @@ if __name__ == "__main__":
         if 'DEBUG' in globals() and DEBUG:
             import traceback
             traceback.print_exc()
+
+
+
+
+
+
+
+
