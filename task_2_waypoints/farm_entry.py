@@ -9,11 +9,12 @@ safety = SafetyModule()
 
 
 # --- Constants ---
-STEP = 0.2  # Increased for faster navigation
-TOLERANCE = 0.5  # Increased tolerance for reaching targets
-MAX_ATTEMPTS = 200  # Increased maximum attempts
+# --- Constants ---
+STEP = 0.8  # Increased for faster navigation (was 0.4)
+TOLERANCE = 0.8  # Kept the same for reaching targets
+MAX_ATTEMPTS = 200  # Kept the same
 DEBUG = False
-ANIMATION_SPEED = 0.05  # Rotation animation speed (lower is faster)
+ANIMATION_SPEED = 0.02  # Faster rotation animation speed (was 0.05)
 
 
 def get_float(prompt):
@@ -164,6 +165,186 @@ class Rover:
                 self.stuck_count=0
         return None
 
+def follow_path_precisely(rover, waypoints, ax, fig, rover_patch):
+    """
+    Follows the planned path with ultra-high precision by enforcing strict path adherence
+    
+    Args:
+        rover: Rover instance
+        waypoints: List of (x,y) points to follow
+        ax: Matplotlib axis
+        fig: Matplotlib figure
+        rover_patch: Visual representation of rover
+    
+    Returns:
+        bool: True if path followed successfully, False otherwise
+        rover_patch: Updated rover patch
+    """
+    if not waypoints or len(waypoints) < 2:
+        print("⚠️ Path too short or empty")
+        return False, rover_patch
+    
+    print(f"\n🛣️ Following planned path with {len(waypoints)} waypoints...")
+    
+    # Constants for strict path following - adjusted for speed
+    PATH_STEP = 0.6  # Increased step size for faster movement (was 0.2)
+    PATH_TOLERANCE = 0.05  # Small tolerance to enforce strict adherence
+    ANIMATION_SPEED = 0.005  # Faster animation (was 0.01)
+    ROTATION_STEP_FACTOR = 2  # Rotate faster
+    
+    # Start with current position
+    start_idx = 0
+    # Find closest waypoint if we're not already at the first one
+    if rover.distance_to(*waypoints[0]) > PATH_TOLERANCE:
+        closest_idx = 0
+        min_dist = float('inf')
+        for i, wp in enumerate(waypoints):
+            dist = rover.distance_to(*wp)
+            if dist < min_dist:
+                min_dist = dist
+                closest_idx = i
+        
+        # If we're closer to a waypoint further along the path, start from there
+        if closest_idx > 0 and min_dist < PATH_TOLERANCE:
+            start_idx = closest_idx
+            print(f"Starting from waypoint {start_idx} which is closest to current position")
+        else:
+            # We need to first move to the first waypoint
+            print(f"Moving to the first waypoint at ({waypoints[0][0]:.2f}, {waypoints[0][1]:.2f})")
+            initial_heading = rover.calculate_heading_to(*waypoints[0])
+            rover_patch = visualize_turn(rover, initial_heading, ax, fig, rover_patch, rotation_speed_factor=ROTATION_STEP_FACTOR)
+            
+            # Don't teleport - move properly to first waypoint
+            init_distance = rover.distance_to(*waypoints[0])
+            if init_distance > PATH_TOLERANCE:
+                segments = max(2, int(init_distance / PATH_STEP))
+                step_dist = init_distance / segments
+                for _ in range(segments):
+                    success = rover.move_forward(step_dist, ax, fig, rover_patch)
+                    if not success:
+                        # If blocked, try with smaller steps
+                        half_step = step_dist / 2
+                        if half_step > 0.1:  # Don't try with too small steps
+                            success = rover.move_forward(half_step, ax, fig, rover_patch)
+                    rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+                    plt.pause(ANIMATION_SPEED)
+    
+    # For path visualization
+    actual_path = []
+    path_line = None
+    
+    # Traverse waypoints
+    for i in range(start_idx, len(waypoints)-1):
+        current_wp = waypoints[i]
+        next_wp = waypoints[i+1]
+        
+        print(f"\n📍 Moving from waypoint {i} to {i+1}: ({current_wp[0]:.2f}, {current_wp[1]:.2f}) → ({next_wp[0]:.2f}, {next_wp[1]:.2f})")
+        
+        # Calculate segment vector and length
+        segment_vec = (next_wp[0] - current_wp[0], next_wp[1] - current_wp[1])
+        segment_len = math.hypot(*segment_vec)
+        
+        if segment_len < 0.01:  # Skip tiny segments
+            continue
+            
+        # Unit vector along segment
+        unit_vec = (segment_vec[0]/segment_len, segment_vec[1]/segment_len)
+        
+        # Align precisely to segment direction with faster rotation
+        segment_heading = math.degrees(math.atan2(segment_vec[1], segment_vec[0])) % 360
+        rover_patch = visualize_turn(rover, segment_heading, ax, fig, rover_patch, rotation_speed_factor=ROTATION_STEP_FACTOR)
+        
+        # Before starting segment, ensure we're exactly at the start point (if not already there)
+        if rover.distance_to(*current_wp) > PATH_TOLERANCE:
+            # Move to start point without teleporting
+            remaining_dist = rover.distance_to(*current_wp)
+            segments = max(2, int(remaining_dist / PATH_STEP))
+            step_dist = remaining_dist / segments
+            
+            for _ in range(segments):
+                if rover.distance_to(*current_wp) <= PATH_TOLERANCE:
+                    break
+                success = rover.move_forward(step_dist, ax, fig, rover_patch)
+                if not success:
+                    # Try with smaller step if blocked
+                    rover.move_forward(step_dist/2, ax, fig, rover_patch)
+                rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+                plt.pause(ANIMATION_SPEED)
+        
+        # Calculate appropriate number of interpolated points for this segment
+        num_interp = max(3, int(segment_len / PATH_STEP))
+        
+        # Move along the segment with precise steps
+        for j in range(1, num_interp + 1):
+            t = j / num_interp
+            interp_point = (
+                current_wp[0] + t * segment_vec[0],
+                current_wp[1] + t * segment_vec[1]
+            )
+            
+            # Always ensure heading is aligned with path
+            point_heading = rover.calculate_heading_to(*interp_point)
+            if abs((point_heading - rover.heading + 180) % 360 - 180) > 1:
+                rover_patch = visualize_turn(rover, point_heading, ax, fig, rover_patch, 
+                                            rotation_speed_factor=ROTATION_STEP_FACTOR)
+            
+            # Calculate exact distance to move
+            move_dist = rover.distance_to(*interp_point)
+            
+            # Move to interpolated point without teleporting
+            if move_dist > PATH_TOLERANCE:
+                success = rover.move_forward(move_dist, ax, fig, rover_patch)
+                
+                # If direct movement fails, try with smaller steps
+                if not success and move_dist > PATH_STEP:
+                    smaller_step = min(PATH_STEP, move_dist/2)
+                    success = rover.move_forward(smaller_step, ax, fig, rover_patch)
+                
+                rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+                
+                # Visualize the actual path
+                actual_path.append((rover.x, rover.y))
+                if len(actual_path) > 1 and path_line:
+                    safe_remove(path_line)
+                if len(actual_path) > 1:
+                    path_x, path_y = zip(*actual_path)
+                    path_line = ax.plot(path_x, path_y, 'g-', linewidth=1, alpha=0.7)[0]
+                
+                fig.canvas.draw_idle()
+                plt.pause(ANIMATION_SPEED)
+                
+            # Safety check if available
+            if hasattr(safety, 'check_safety'):
+                status, _ = safety.check_safety([rover.x, rover.y], rover.heading, [(rover.x, rover.y), interp_point])
+                if status != 'safe':
+                    print("⚠️ Safety violation detected during path following!")
+                    return False, rover_patch
+    
+    # For the final waypoint, use exact positioning with proper movement
+    last_wp = waypoints[-1]
+    final_heading = rover.calculate_heading_to(*last_wp)
+    rover_patch = visualize_turn(rover, final_heading, ax, fig, rover_patch, rotation_speed_factor=ROTATION_STEP_FACTOR)
+    
+    # Move directly to last waypoint without teleporting
+    final_dist = rover.distance_to(*last_wp)
+    if final_dist > PATH_TOLERANCE:
+        # Break into smaller steps
+        segments = max(2, int(final_dist / PATH_STEP))
+        step_dist = final_dist / segments
+        
+        for _ in range(segments):
+            if rover.distance_to(*last_wp) <= PATH_TOLERANCE:
+                break
+            success = rover.move_forward(step_dist, ax, fig, rover_patch)
+            if not success:
+                # Try smaller step if blocked
+                rover.move_forward(step_dist/2, ax, fig, rover_patch)
+            rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+            plt.pause(ANIMATION_SPEED)
+    
+    print("✅ Successfully followed the planned path with precision")
+    return True, rover_patch
+
 # Visualization helpers (unchanged)
 def safe_remove(element):
     if element:
@@ -189,7 +370,18 @@ def update_rover_visualization(rover, ax, fig, rover_patch=None):
     fig.canvas.draw_idle(); plt.pause(0.01)
     return rover_patch
 
-def visualize_turn(rover, new_heading, ax, fig, rover_patch=None):
+def visualize_turn(rover, new_heading, ax, fig, rover_patch=None, rotation_speed_factor=1):
+    """
+    Visualize the rover turning with adjustable speed
+    
+    Args:
+        rover: Rover instance
+        new_heading: Target heading in degrees
+        ax: Matplotlib axis
+        fig: Matplotlib figure
+        rover_patch: Visual representation of rover
+        rotation_speed_factor: Speed up factor for rotation (higher = faster)
+    """
     current = rover.heading
     diff = (new_heading-current+180)%360 - 180
     if abs(diff)<5:
@@ -199,18 +391,22 @@ def visualize_turn(rover, new_heading, ax, fig, rover_patch=None):
     print(f"Cmd #{rover.command_count}: ROTATE_TO {new_heading:.1f}° ({diff:.1f}° turn)")
     if rover.waypoint:
         print(f"   📏 Distance to waypoint: {rover.distance_to(*rover.waypoint):.2f}m")
-    steps = max(5, min(int(abs(diff)/5), 36))
+    
+    # Adjust steps based on speed factor - fewer steps = faster turning
+    base_steps = max(5, min(int(abs(diff)/5), 36))
+    steps = max(3, int(base_steps / rotation_speed_factor))  # Minimum 3 steps for visual smoothness
+    
     step_ang = diff/steps
     try:
         for i in range(1, steps+1):
             rover.heading = (current + step_ang*i)%360
             rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
-            plt.pause(ANIMATION_SPEED)
+            # Faster animation
+            plt.pause(ANIMATION_SPEED/rotation_speed_factor)
     except Exception as e:
         if DEBUG: print(f"Turn viz error: {e}")
         rover.heading = new_heading
     return update_rover_visualization(rover, ax, fig, rover_patch)
-
 # Path planning (unchanged)
 def find_best_path_angle(rover, tx, ty, blocked_angles=None):
     direct = rover.calculate_heading_to(tx,ty)
@@ -416,8 +612,6 @@ if __name__ == "__main__":
         print(f"\n❌ Simulation error: {e}")
         if DEBUG:
             import traceback; traceback.print_exc()
-
-
 
 
 

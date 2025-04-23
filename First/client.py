@@ -17,6 +17,7 @@ class GPSClient:
 
     def run(self, duration=30):
         start_time = time.time()
+        distance_traveled = 0
         while time.time() - start_time < duration:
             try:
                 data = self.socket.recv(1024).decode()
@@ -27,6 +28,7 @@ class GPSClient:
                           f"Lon: {parsed['longitude']:.6f} | "
                           f"Fix: {parsed['fix_quality']} | "
                           f"Sats: {parsed['satellites']}")
+                    distance_traveled += 0.1  # Increment distance by 0.1m
             except Exception as e:
                 print(f"Error: {e}")
                 break
