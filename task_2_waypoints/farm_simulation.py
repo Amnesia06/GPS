@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-from astar_algo import AStarPlanner
-
+import logging_100mm
 # Import our modules
 from row_navigation import Rover, navigate_to_point, TOLERANCE, follow_path_precisely, update_rover_visualization, visualize_turn
 from row_navigation import RowNavigator
 from farm_safety import SafetyModule
+from sleep_mode import FailsafeModule
 debug = False
 safety = SafetyModule()
 
@@ -35,6 +35,13 @@ def safe_remove(element):
     return False
 
 def run_simulation():
+    def on_failsafe_triggered(reason):
+        print(f"⚠️ Failsafe triggered: {reason.value}")
+        rover.log_movement("stop")  # Stop the rover for safety
+
+    def on_recovery_attempt(reason):
+        print(f"🔄 Attempting recovery from {reason.value}")
+        return True  # Assume recovery succeeds for simulation
     
     print("🚜 Farm Rover Navigation Simulation 🚜")
     print("=====================================")
@@ -43,13 +50,40 @@ def run_simulation():
     
     # Create the rover
     rover = Rover()
+    gps_logger = logging_100mm.initialize_gps_logger(rover)
+  
     
     # Setup the farm boundaries (only input required from user)
-    print("\n🔧 Enter farm rectangle coordinates:")
-    min_x = get_float(" Min X: ")
-    max_x = get_float(" Max X: ")
-    min_y = get_float(" Min Y: ")
-    max_y = get_float(" Max Y: ")
+  # Create row navigator first to load waypoints
+    navigator = RowNavigator(rover)
+    failsafe = FailsafeModule()
+    failsafe.update_gps_status(has_fix=True, satellites=10, hdop=1.0)
+    failsafe.update_internet_status(connected=True, latency=0.1)
+    failsafe.update_module_communication()
+    rover.failsafe = failsafe
+    rover.navigator = navigator
+    failsafe.set_callbacks(on_failsafe_triggered, on_recovery_attempt)
+    failsafe.start_monitoring()
+
+    navigator.zigzag_pattern = True
+
+# Load waypoints from CSV file
+    csv_loaded = navigator.load_rows_from_csv(r"F:\GPS\task_2_waypoints\waypoints_100mm.csv")
+    if not csv_loaded:
+        print("❌ Failed to load waypoints from CSV. Simulation cannot proceed without waypoints.")
+        return
+        
+    # Calculate farm boundaries based on waypoints with margin
+    margin = 3.0  # Add margin around waypoints
+    min_x = min(point[0] for point in navigator.interpolated_path) - margin
+    max_x = max(point[0] for point in navigator.interpolated_path) + margin
+    min_y = min(point[1] for point in navigator.interpolated_path) - margin
+    max_y = max(point[1] for point in navigator.interpolated_path) + margin
+    entry_point = (min_x, min_y)
+    # Create vertices for the farm boundary
+    verts = [(min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)]
+
+    print(f"📏 Dynamic farm boundaries: X [{min_x:.2f}, {max_x:.2f}], Y [{min_y:.2f}, {max_y:.2f}]")
     
     # Create vertices for the farm boundary
     verts = [(min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)]
@@ -119,10 +153,7 @@ def run_simulation():
     ax.scatter(random_x, random_y, c='green', s=80, label='Start (Inside)')
     
     # Setup plot limits and grid
-    margin = 3
-    ax.set_xlim(min_x - margin, max_x + margin)
-    ax.set_ylim(min_y - margin, max_y + margin)
-    ax.grid(True)
+
     
     # Setup rover path visualization
     path_line, = ax.plot([], [], 'b-', alpha=0.5, label='Path')
@@ -139,21 +170,40 @@ def run_simulation():
     print("\n🚜 TASK 1: Determining farm navigation plan with zigzag pattern...\n")
 
     # Create row navigator
-    navigator = RowNavigator(rover)
+   
     navigator.zigzag_pattern = True  # Ensure zigzag pattern is enabled
 
     # Generate rows within the farm using zigzag pattern
-    row_start_x = min_x + 2  # Start rows 2 units from left edge
-    row_start_y = min_y + 2  # Start rows 2 units from bottom edge
-    row_spacing = 1.5
-    num_strips = max(3, min(10, int((max_x - min_x - 4) / row_spacing)))  # Calculate number of strips based on farm width
+# Load waypoints from CSV file
+    csv_loaded = navigator.load_rows_from_csv(r"F:\GPS\task_2_waypoints\waypoints_100mm.csv")
+    if navigator.interpolated_path:
+        wp_min_x = min(point[0] for point in navigator.interpolated_path)
+        wp_max_x = max(point[0] for point in navigator.interpolated_path)
+        wp_min_y = min(point[1] for point in navigator.interpolated_path)
+        wp_max_y = max(point[1] for point in navigator.interpolated_path)
+        
+        # Use the wider range between farm boundaries and waypoints
+        plot_min_x = min(min_x, wp_min_x)
+        plot_max_x = max(max_x, wp_max_x) 
+        plot_min_y = min(min_y, wp_min_y)
+        plot_max_y = max(max_y, wp_max_y)
+        
+        # Add a larger margin
+        margin = max(plot_max_x - plot_min_x, plot_max_y - plot_min_y) * 0.15
+        ax.set_xlim(plot_min_x - margin, plot_max_x + margin)
+        ax.set_ylim(plot_min_y - margin, plot_max_y + margin)
+    else:
+        # Fallback to original farm boundaries
+        margin = 3
+        ax.set_xlim(min_x - margin, max_x + margin)
+        ax.set_ylim(min_y - margin, max_y + margin)
+    ax.grid(True)
 
-    # Generate rows and visualize them
-    rows = navigator.generate_rows(
-        row_start_x, row_start_y,
-        num_strips=num_strips,
-        strip_length=max_y - min_y - 4  # Strip height based on farm height
-    )
+    if not csv_loaded:
+         print("❌ Failed to load waypoints from CSV. Simulation cannot proceed without waypoints.")
+         return
+  
+
     safety.set_waypoints(navigator.interpolated_path)
 
 
@@ -174,62 +224,36 @@ def run_simulation():
     print("\n🚜 TASK 1: Navigating directly to path start point...\n")
     print(f"🎯 Path start point: ({path_start[0]:.3f}, {path_start[1]:.3f})")
     print(f"📏 Distance to path start: {rover.distance_to(*path_start):.3f}m")
+    
+ 
+
+    def on_rover_wakeup():
+        print("Rover has woken up! Resuming operations...")
+        # Do whatever you need when rover wakes up
 
     # Navigate to path start
     def navigate_to_path_start(rover, safety, path_start, ax, fig, rover_patch):
+          
         """
-        Navigate rover to the starting point of the path
+        Navigate rover to the starting point of the path using direct point-to-point moves
+        with a larger step size and a slightly more generous tolerance to avoid getting stuck.
         """
-        # Save original position
-        original_x, original_y = rover.x, rover.y
-        original_heading = rover.heading
-        
-        # Create A* planner - temporarily set path_start as the entry point for planning
-        temp_entry = (path_start[0], path_start[1])
-        
-        # Save original entry point
-        original_entry = rover.entry_point
-        
-        # Temporarily set entry point to path_start for A* planning
-        rover.entry_point = temp_entry
-        
-        print("\n🗺️ Planning path to starting point...")
-        planner = AStarPlanner(rover, safety, cell_size=0.2, padding=2.5)
-        
-        # Restore the original entry point
-        rover.entry_point = original_entry
-        
-        # Plan the path
-        waypoints = planner.plan()
-        
-        if waypoints:
-            print(f"✅ Found path to starting point with {len(waypoints)} waypoints")
-            
-            # Visualize the planned path
-            path_x, path_y = zip(*waypoints)
-            planned_path_line = ax.plot(path_x, path_y, 'y--', linewidth=2, alpha=0.7, label='Path to Start')[0]
-            ax.legend(loc='upper left')
-            fig.canvas.draw_idle()
-            plt.pause(0.5)
-            
-            # Navigate to path start
-            reached_start, rover_patch = follow_path_precisely(rover, waypoints, ax, fig, rover_patch)
+        print("\n🗺️ Navigating directly to starting point...")
 
-            # Clean up after path following
-            safe_remove(planned_path_line)
-            
-            # Final approach to exact path start
-            if not reached_start or rover.distance_to(*path_start) > TOLERANCE:
-                reached_start, rover_patch = navigate_to_point(
-                    rover, path_start[0], path_start[1], ax, fig, rover_patch)
-                
-            return reached_start, rover_patch
-        else:
-            # Direct navigation as fallback
-            print("⚠️ Failed to plan path to starting point. Attempting direct navigation.")
-            reached_start, rover_patch = navigate_to_point(
-                rover, path_start[0], path_start[1], ax, fig, rover_patch)
-            return reached_start, rover_patch
+        reached_start, rover_patch = navigate_to_point(
+            rover,
+            path_start[0],
+            path_start[1],
+            ax,
+            fig,
+            rover_patch,
+            step_size=1.5,   # larger increments per move
+            tolerance=0.8    # accept slightly further from the exact point
+        )
+
+        return reached_start, rover_patch
+
+     
 
     # Use our custom function to navigate to path start
     reached_start, rover_patch = navigate_to_path_start(rover, safety, path_start, ax, fig, rover_patch)
@@ -288,6 +312,9 @@ def run_simulation():
     # Keep plot open until closed manually
     plt.ioff()
     plt.show(block=True)
+    logging_100mm.stop_gps_logger(rover)
+    failsafe.stop_monitoring()
+
 
 if __name__ == "__main__":
     try:
