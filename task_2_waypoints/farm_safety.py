@@ -1,6 +1,7 @@
 import math
 import random
 
+
 class SafetyModule:
     """
     A module to handle drift and enforce no-go rules in farm rover navigation.
@@ -9,8 +10,10 @@ class SafetyModule:
       2) Exiting the farm boundary.
     Drift logic is unchanged.
     """
-    def __init__(self, revisit_threshold=0.2):
+    def __init__(self, failsafe = None, revisit_threshold=0.2):
         # Drift configuration
+        self.failsafe = failsafe  # Link to FailsafeModule
+        self.is_paused = False
         self.turn_rate_per_cm = 20           # degrees per cm of turn capability
         self.distance_per_step = 0.2         # cm traveled per simulation step
         self.lookahead_steps = 5             # baseline lookahead for drift recovery
@@ -27,6 +30,12 @@ class SafetyModule:
         # History logs
         self.violations_history = []         # track no-go incidents
         self.drift_history = []              # track drift incidents
+    
+    def on_failsafe_triggered(self):
+        self.is_paused = True  # Pause SafetyModule
+
+    def on_failsafe_cleared(self):
+        self.is_paused = False  # Resume SafetyModule
 
     def set_geofence(self, vertices):
         """Set the farm boundary as a polygon"""
@@ -56,6 +65,16 @@ class SafetyModule:
             p1x, p1y = p2x, p2y
         return not inside
 
+    def calculate_drift(self, pos):
+        """Calculate the drift distance (placeholder implementation)."""
+        # TODO: Implement actual drift calculation based on requirements
+        return 0.0  # Placeholder; replace with real logic
+
+    def adjust_path(self, pos, path):
+        """Adjust the path to account for drift (placeholder implementation)."""
+        # TODO: Implement path adjustment logic
+        return path  # Placeholder; replace with real logic
+
     def check_safety(self, pos, heading, path):
         """
         Check if a planned move is safe.
@@ -63,6 +82,11 @@ class SafetyModule:
           - status: 'safe', 'drift', or 'no-go'
           - data: info for recovery or violation handling
         """
+        if self.is_paused:          # If paused by Failsafe
+            return 'safe', None     # Do nothing
+        if self.failsafe is not None and self.failsafe.in_failsafe_mode:  # Check if Failsafe is active  # Check if Failsafe is active
+            return 'safe', None            # Do nothing if it is
+        
         # Candidate next position
         next_pos = path[-1]
 
@@ -77,7 +101,7 @@ class SafetyModule:
                         'heading': heading
                     }
                 else:
-                    # mark this waypoint as visited now
+                    # Mark this waypoint as visited now
                     self.visited_wp_indices.add(idx)
                     break
 
@@ -91,24 +115,43 @@ class SafetyModule:
             }
 
         # 3) Potential drift
+        drift_distance = self.calculate_drift(pos)  # Use pos instead of current_position
+        if drift_distance > 1.0:  # If drift is too big
+            self.failsafe.trigger_custom_failsafe("Severe drift detected")  # Call Failsafe
+            return 'safe', None
+        elif drift_distance > 0.5:  # Small drift
+            new_path = self.adjust_path(pos, path)  # Compute adjusted path
+            return 'adjusted', new_path
+
+        # Other safety checks
         if path and random.random() < self.drift_probability:
-            closest_idx, _ = self.find_closest_point_on_path(pos, path)
+            closest_idx, closest_point = self.find_closest_point_on_path(pos, path)
             if closest_idx < len(path) - self.lookahead_steps:
+                # Calculate drift distance
+                drift_distance = math.hypot(pos[0] - closest_point[0], pos[1] - closest_point[1])
                 self.drift_history.append(('drift', pos.copy(), heading))
+
+                # Report to FailsafeModule if provided
+                if self.failsafe:
+                    drift_distance, severity = self.failsafe.report_drift(pos, closest_point)
+                    if severity in ['severe', 'critical']:  # Adjust based on actual severity enum/values
+                        return 'drift', {'severity': severity, 'distance': drift_distance}
+
+                # Proceed with SafetyModule recovery for minor/moderate drift
                 drift_angle = 45 if random.choice([True, False]) else -45
                 trigger_idx = closest_idx
-                end_idx = min(trigger_idx + self.lookahead_steps, len(path)-1)
+                end_idx = min(trigger_idx + self.lookahead_steps, len(path) - 1)
                 dx = path[end_idx][0] - path[trigger_idx][0]
                 dy = path[end_idx][1] - path[trigger_idx][1]
                 mag = math.hypot(dx, dy)
-                ux, uy = (dx/mag, dy/mag) if mag else (1.0, 0.0)
+                ux, uy = (dx / mag, dy / mag) if mag else (1.0, 0.0)
                 rad = math.radians(drift_angle)
                 c, s = math.cos(rad), math.sin(rad)
-                rx = ux*c + uy*s
-                ry = -ux*s + uy*c
+                rx = ux * c + uy * s
+                ry = -ux * s + uy * c
                 turn_dist = abs(drift_angle) / self.turn_rate_per_cm
                 extra_skip = int(turn_dist / self.distance_per_step)
-                recovery_idx = min(trigger_idx + self.lookahead_steps + extra_skip, len(path)-1)
+                recovery_idx = min(trigger_idx + self.lookahead_steps + extra_skip, len(path) - 1)
                 recovery_target = path[recovery_idx]
                 return 'drift', {
                     'trigger_idx': trigger_idx,
@@ -116,20 +159,21 @@ class SafetyModule:
                     'drift_vector': (rx, ry),
                     'recovery_idx': recovery_idx,
                     'recovery_target': recovery_target,
-                    'path': path
+                    'path': path,
+                    'distance': drift_distance
                 }
 
         # 4) Safe to proceed
         return 'safe', None
 
     def handle_drift(self, pos, heading, drift_data):
-        """(Unchanged) Simulate drift and guide recovery."""
-        # ... existing drift handler code ...
+        """Simulate drift and guide recovery."""
+        # TODO: Implement drift handling logic
         raise NotImplementedError
 
     def handle_no_go_violation(self, pos, heading, violation_data):
-        """(Unchanged) Back away from forbidden position."""
-        # ... existing no-go handler code ...
+        """Back away from forbidden position."""
+        # TODO: Implement no-go violation handling logic
         raise NotImplementedError
 
     def find_closest_point_on_path(self, pos, path):

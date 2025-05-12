@@ -1,0 +1,1 @@
+2025-05-05 13:40:39,345 - ERROR - Failed to connect to /dev/ttyUSB0: could not open port '/dev/ttyUSB0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3)

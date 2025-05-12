@@ -4,6 +4,7 @@ import csv
 import os
 import random
 from threading import Thread, Event
+from coordinate_converter import CoordinateConverter
 
 class GPSLogger:
     def __init__(self, rover):
@@ -15,143 +16,205 @@ class GPSLogger:
         self.running = False
         self.stop_event = Event()
         self.logger_thread = None
+        self.converter = CoordinateConverter()
         
+        # Set run_id properly
+        if not hasattr(self.rover, 'run_id'):
+            self.rover.run_id = self.get_next_run_id()
+            
         # Ensure log directory exists
         os.makedirs(os.path.dirname(self.log_file_path), exist_ok=True)
+        
+        # Define fieldnames consistently for use throughout the class
+        self.fieldnames = ['timestamp', 'run_id', 'x_utm', 'y_utm', 'latitude', 'longitude', 
+                          'heading', 'bearing', 'compass_heading', 'fix_quality', 
+                          'satellite_count', 'deviation', 'data_age', 'status']
         
         # Write header if file doesn't exist
         if not os.path.exists(self.log_file_path) or os.path.getsize(self.log_file_path) == 0:
             with open(self.log_file_path, 'w', newline='') as csvfile:
-                fieldnames = ['timestamp', 'run_id', 'x', 'y', 'heading', 'bearing', 
-                             'compass_heading', 'fix_quality', 'satellite_count', 
-                             'deviation', 'data_age', 'status']
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
                 writer.writeheader()
-        
-        # If rover doesn't have a run_id, initialize it
-        if not hasattr(self.rover, 'run_id'):
-            self.rover.run_id = self.get_next_run_id()
     
     def get_next_run_id(self):
         """Determine the next run ID based on existing data in the log file."""
         if not os.path.exists(self.log_file_path):
             return 1
-            
         try:
-            # Read the existing file to find the highest run_id
             max_run_id = 0
             with open(self.log_file_path, 'r', newline='') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    if 'run_id' in row:
+                    if 'run_id' in row and row['run_id']:
                         try:
                             run_id = int(row['run_id'])
                             max_run_id = max(max_run_id, run_id)
                         except (ValueError, TypeError):
                             pass
-            
-            # Return the next run ID
             return max_run_id + 1
         except Exception as e:
             print(f"Error determining run ID: {e}")
-            return 1  # Default to 1 if there's an error
-   # Modify the get_gps_data method in your logging_100mm.py file
+            return 1
+    
+    def process_emlid_gps_data(self, emlid_data):
+        """Process real Emlid GPS data (not used in simulation)."""
+        if not emlid_data or 'latitude' not in emlid_data or 'longitude' not in emlid_data:
+            print("⚠️ Invalid or missing Emlid GPS data")
+            return None, None
+        try:
+            easting, northing = self.converter.latlon_to_utm_coord(
+                emlid_data['latitude'], emlid_data['longitude']
+            )
+            if easting is None or northing is None:
+                print("⚠️ Failed to convert Emlid lat/lon to UTM")
+                return None, None
+                
+            # Calculate local simulation coordinates by applying the offset
+            utm_offset_x = 0
+            utm_offset_y = 0
+            if hasattr(self.rover, 'navigator') and hasattr(self.rover.navigator, 'utm_offset_x'):
+                utm_offset_x = self.rover.navigator.utm_offset_x
+                utm_offset_y = self.rover.navigator.utm_offset_y
+                
+            sim_x = easting - utm_offset_x
+            sim_y = northing - utm_offset_y
+            self.rover.set_position(sim_x, sim_y)
+            
+            return easting, northing
+        except Exception as e:
+            print(f"Error processing Emlid GPS data: {e}")
+            return None, None
+            
     def get_gps_data(self):
-        """Get current GPS data from rover. In a real system, this would 
-        query the actual GPS hardware."""
-        # Calculate standard compass bearing
-        bearing = (90 - self.rover.heading) % 360  
+        """Get current GPS data from rover, ensuring UTM offsets are applied and valid lat/lon are computed."""
+        # Get rover heading and calculate bearing
+        heading = self.rover.heading if hasattr(self.rover, 'heading') else 0.0
+        bearing = (90 - heading) % 360
+        compass_heading = self.rover.get_compass_direction(heading) if hasattr(self.rover, 'get_compass_direction') else 'Unknown'
         
-        # Get compass direction
-        compass_heading = self.rover.get_compass_direction(self.rover.heading)
+        # Get rover position
+        x_local = self.rover.x if hasattr(self.rover, 'x') else 0.0
+        y_local = self.rover.y if hasattr(self.rover, 'y') else 0.0
         
-        # Safely calculate deviation if the method exists
-        deviation = 0
-        if hasattr(self.rover, 'navigator'):
-            navigator = self.rover.navigator
-            if hasattr(navigator, 'calculate_deviation'):
-                deviation = navigator.calculate_deviation(self.rover.x, self.rover.y)
-            elif hasattr(navigator, 'calculate_path_deviation'):
-                # Try an alternative method name if it exists
-                deviation = navigator.calculate_path_deviation(self.rover.x, self.rover.y)
+        # Set default UTM offsets (used if navigator is not available)
+        utm_offset_x = 380000.0
+        utm_offset_y = 2044880.0
+        deviation = 0.0
         
+        # Get UTM offsets from navigator if available
+        if (hasattr(self.rover, 'navigator') and 
+            hasattr(self.rover.navigator, 'utm_offset_x') and
+            self.rover.navigator.utm_offset_x is not None and
+            self.rover.navigator.utm_offset_y is not None):
+            utm_offset_x = self.rover.navigator.utm_offset_x
+            utm_offset_y = self.rover.navigator.utm_offset_y
+            if hasattr(self.rover.navigator, 'calculate_deviation'):
+                deviation = self.rover.navigator.calculate_deviation(x_local, y_local)
+        
+        # Calculate actual UTM coordinates
+        x_utm = x_local + utm_offset_x
+        y_utm = y_local + utm_offset_y
+        
+        # Convert UTM to lat/lon
+        try:
+            lat, lon = self.converter.utm_to_latlon_coord(
+                x_utm, y_utm,
+                zone_number=45, zone_letter='N'
+            )
+            
+            # Validate lat/lon ranges
+            if lat is None or lon is None or not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+                raise ValueError(f"Invalid lat/lon values: {lat}, {lon}")
+                
+            fix_quality = '3D Fix'
+            satellite_count = random.randint(8, 12)
+            status = 'OK'
+        except Exception as e:
+            print(f"⚠️ Error converting UTM to Lat/Lon: {e}")
+            lat, lon = 0.0, 0.0
+            fix_quality = 'No Fix'
+            satellite_count = 0
+            status = 'ERROR'
+
+        # Create and return the data dictionary
         return {
             'timestamp': datetime.now().isoformat(),
             'run_id': self.rover.run_id,
-            'x': self.rover.x,
-            'y': self.rover.y,
-            'heading': self.rover.heading,
+            'x_utm': x_utm,
+            'y_utm': y_utm, 
+            'latitude': lat,
+            'longitude': lon,
+            'heading': heading,
             'bearing': bearing,
             'compass_heading': compass_heading,
-            'fix_quality': '3D Fix',  # Simulated fix quality
-            'satellite_count': random.randint(8, 12),  # Simulated satellite count
+            'fix_quality': fix_quality,
+            'satellite_count': satellite_count,
             'deviation': deviation,
-            'data_age': 0,  # Fresh data
-            'status': 'OK'
+            'data_age': 0,
+            'status': status
         }
-        
     def log_data_once(self):
-        """Attempt to log GPS data once with retry mechanism."""
-        attempts = 0
-        data = None
-        
-        while attempts < self.max_attempts:
-            try:
-                data = self.get_gps_data()
-                if data:
-                    break  # Successfully got data
-            except Exception as e:
-                print(f"GPS data retrieval error (attempt {attempts+1}/{self.max_attempts}): {e}")
-            
-            attempts += 1
-            time.sleep(0.1)  # Wait 100ms between attempts
-        
-        # If we still don't have data after all attempts
-        if data is None:
-            data = {
-                'timestamp': datetime.now().isoformat(),
-                'run_id': getattr(self.rover, 'run_id', 0),
-                'x': getattr(self.rover, 'x', 0),
-                'y': getattr(self.rover, 'y', 0),
-                'heading': getattr(self.rover, 'heading', 0),
-                'bearing': 0,
-                'compass_heading': 'Unknown',
-                'fix_quality': 'No Fix',
-                'satellite_count': 0,
-                'deviation': 0,
-                'data_age': 300,  # 300ms old (stale data)
-                'status': 'ERROR: GPS data unavailable after 3 attempts'
-            }
-            print("⚠️ WARNING: Failed to receive fresh GPS data after 3 attempts (300ms)")
-        
-        # Write data to log file
+        """Log a single GPS data entry to the CSV file."""
         try:
+            # Get GPS data
+            data = self.get_gps_data()
+            
+            # Ensure all required fields have valid values
+            for field in self.fieldnames:
+                if field not in data or data[field] is None:
+                    if field in ['x_utm', 'y_utm', 'latitude', 'longitude', 'heading', 
+                            'bearing', 'deviation', 'data_age', 'satellite_count']:
+                        data[field] = 0.0  # Default for numeric fields
+                    elif field == 'status':
+                        data[field] = 'ERROR'
+                    elif field == 'fix_quality':
+                        data[field] = 'No Fix'
+                    elif field == 'run_id':
+                        data[field] = self.rover.run_id
+                    else:
+                        data[field] = ""
+            
+            # Write to CSV file
             with open(self.log_file_path, 'a', newline='') as csvfile:
-                fieldnames = ['timestamp', 'run_id', 'x', 'y', 'heading', 'bearing', 
-                             'compass_heading', 'fix_quality', 'satellite_count', 
-                             'deviation', 'data_age', 'status']
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
                 writer.writerow(data)
-                self.last_log_time = time.time()
-                return True
+                
         except Exception as e:
-            print(f"Error writing to GPS log: {e}")
-            return False
+            print(f"Error in log_data_once: {e}")
+            # Try to write an error record if possible
+            try:
+                error_data = {field: "" for field in self.fieldnames}
+                error_data.update({
+                    'timestamp': datetime.now().isoformat(),
+                    'run_id': getattr(self.rover, 'run_id', 0),
+                    'status': f'ERROR: {str(e)[:50]}'
+                })
+                
+                with open(self.log_file_path, 'a', newline='') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=self.fieldnames)
+                    writer.writerow(error_data)
+            except:
+                pass  # If even error logging fails, just continue
+        
     
     def logger_loop(self):
         """Main logger loop that runs in a separate thread."""
         while not self.stop_event.is_set():
-            current_time = time.time()
-            time_since_last_log = current_time - self.last_log_time
-            
-            # If it's time to log data
-            if time_since_last_log >= self.log_interval:
-                self.log_data_once()
-            
-            # Sleep a bit to prevent thrashing
-            # Calculate sleep time to maintain proper interval
-            sleep_time = max(0.01, self.log_interval - (time.time() - current_time))
-            time.sleep(sleep_time)
+            try:
+                current_time = time.time()
+                time_since_last_log = current_time - self.last_log_time
+                
+                # If it's time to log data
+                if time_since_last_log >= self.log_interval:
+                    self.log_data_once()
+                    self.last_log_time = current_time
+                
+                # Sleep to maintain proper interval
+                sleep_time = max(0.01, self.log_interval - (time.time() - current_time))
+                time.sleep(sleep_time)
+            except Exception as e:
+                print(f"Error in logger loop: {e}")
+                time.sleep(0.1)  # Sleep briefly to avoid tight error loops
     
     def start(self):
         """Start the GPS logging thread."""
@@ -177,9 +240,7 @@ class GPSLogger:
             self.logger_thread.join(timeout=1.0)
         self.running = False
 
-
-# To integrate with the existing Rover class, add these methods:
-
+# Integration functions for the Rover class
 def initialize_gps_logger(rover):
     """Initialize and start the GPS logger for the rover."""
     rover.gps_logger = GPSLogger(rover)
@@ -191,5 +252,26 @@ def stop_gps_logger(rover):
     if hasattr(rover, 'gps_logger') and rover.gps_logger.running:
         rover.gps_logger.stop()
 
-
-
+def update_rover_position_from_emlid(rover, emlid_data):
+    """
+    Update rover position from Emlid GPS data.
+    
+    Args:
+        rover: The rover instance
+        emlid_data: Dictionary containing 'latitude' and 'longitude' from Emlid receiver
+    
+    Returns:
+        bool: True if position was updated successfully, False otherwise
+    """
+    if not hasattr(rover, 'gps_logger'):
+        print("⚠️ GPS logger not initialized")
+        return False
+        
+    try:
+        easting, northing = rover.gps_logger.process_emlid_gps_data(emlid_data)
+        if easting is not None and northing is not None:
+            return True
+        return False
+    except Exception as e:
+        print(f"Error updating rover position: {e}")
+        return False

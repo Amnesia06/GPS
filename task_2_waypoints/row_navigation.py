@@ -18,20 +18,27 @@ MAX_ATTEMPTS = 200  # Kept the same
 DEBUG = False
 ANIMATION_SPEED = 0.001  # Increased for slowerment
 
-# Moved from farm_entry.py
+from coordinate_converter import CoordinateConverter  # Import your module
+
 class Rover:
     def __init__(self):
-        self.x = 0.0
-        self.y = 0.0
+        self.x = 0.0  # Simulation x (normalized)
+        self.y = 0.0  # Simulation y (normalized)
+        self.utm_x = 0.0  # Real UTM x
+        self.utm_y = 0.0  # Real UTM y
         self.heading = 0.0
-        self.last_heading = 0.0  # Added memory for last heading
+        self.last_heading = 0.0
         self.history = []
         self.geofence = None
         self.entry_point = None
         self.inside_fence = False
-        self.command_count = 0  # Add command count tracking
-        self.blocked_directions = set()  # Set of blocked directions
+        self.command_count = 0
+        self.blocked_directions = set()
         self.navigator = None
+        self.utm_offset_x = 0.0  # Offset for normalization
+        self.utm_offset_y = 0.0  # Offset for normalization
+        self.run_id = None
+        self.coord_converter = CoordinateConverter()  # Initialize CoordinateConverter
 
 
     # Add to Rover class
@@ -61,7 +68,6 @@ class Rover:
             in_fence = self.is_inside_farm(x, y)
             if not in_fence:
                 return False
-        # Proceed with setting position
         if self.geofence and not force:
             if self.entry_point and self.distance_to(*self.entry_point) <= 0.8:
                 self.inside_fence = True
@@ -69,74 +75,98 @@ class Rover:
             if (in_fence and not self.inside_fence) or (not in_fence and self.inside_fence):
                 print("⚠️ Movement blocked: would cross fence boundary")
                 return False
-        
-        # Store previous position and heading before updating
+
+        # Store previous position
         prev_x, prev_y = self.x, self.y
         prev_heading = self.heading
-        
-        # Update position with limited decimal places
+
+        # Update simulation coordinates (internal use, not logged)
         self.x = round(x, 2)
         self.y = round(y, 2)
+
+        # Calculate real-world UTM coordinates
+        if hasattr(self, 'navigator') and hasattr(self.navigator, 'utm_offset_x'):
+            self.utm_x = self.x + self.navigator.utm_offset_x
+            self.utm_y = self.y + self.navigator.utm_offset_y
+        else:
+            self.utm_x = self.x
+            self.utm_y = self.y
+
+        # Convert UTM to lat/lon
+        lat, lon = self.coord_converter.utm_to_latlon_coord(
+            self.utm_x, self.utm_y, zone_number=45, zone_letter='N'
+        )
+        if lat is None or lon is None:
+            print("⚠️ Failed to convert UTM to lat/lon, using fallback values")
+            lat, lon = 0.0, 0.0
 
         if hasattr(self, 'failsafe'):
             self.failsafe.update_gps_status(has_fix=True, satellites=10, hdop=1.0)
             self.failsafe.update_internet_status(connected=True, latency=0.1)
             self.failsafe.update_module_communication()
-        
+
         if heading is not None:
             self.heading = round(heading % 360, 1)
-            # Update last_heading when heading changes
             self.last_heading = self.heading
-            
+
         if add_to_history:
             self.history.append((self.x, self.y))
-            
-        self.command_count += 1  # Increment command count
-        
-        # Get compass direction - using standard compass conversion
-        compass_direction = self.get_compass_direction(self.heading)
-        
-        # Calculate standard compass bearing for display
-        standard_bearing = (90 - self.heading) % 360
-        
-        # Add GPS-like position reporting with compass direction and standard bearing
-        print(f"📍 GPS: Position [{self.x:.2f}, {self.y:.2f}], Heading: {self.heading:.1f}° (Compass: {standard_bearing:.1f}° {compass_direction})")
 
-        # Use standard compass heading for logging
-        compass_heading = self.get_compass_direction(self.heading)
-        
-        # Get or create a run ID
-        if not hasattr(self, 'run_id'):
-            # First time initialization
+        self.command_count += 1
+
+        # Get compass direction
+        compass_direction = self.get_compass_direction(self.heading)
+        standard_bearing = (90 - self.heading) % 360
+
+        # Terminal output (real-world coordinates only)
+        print(f"📍 UTM: [{self.utm_x:.2f}, {self.utm_y:.2f}] (Zone 45N)")
+        print(f"📍 Lat/Lon: [{lat:.6f}°N, {lon:.6f}°E]")
+        print(f"📍 Heading: {self.heading:.1f}° (Compass Heading: {standard_bearing:.1f}° {compass_direction})")
+
+        # Initialize run_id if not set or invalid (ensure it's set for first row)
+        if not hasattr(self, 'run_id') or self.run_id is None or self.run_id == '':
             self.run_id = self.get_next_run_id()
-        
-        # Calculate bearing angle (standard compass bearing)
-        bearing = (90 - self.heading) % 360  # Convert to standard compass bearing
-        
+            print(f"Debug: Assigned run_id: {self.run_id}")
+
+        # Prepare log data (real-world coordinates only)
+        # And add a comment to clarify the units:
         log_data = {
             'timestamp': datetime.now().isoformat(),
-            'run_id': self.run_id,
-            'x': self.x,
-            'y': self.y,
+            'run_id': str(self.run_id),  # Always convert to string, never empty
+            'x_utm': self.utm_x,  # Real UTM x
+            'y_utm': self.utm_y,  # Real UTM y
+            'latitude': lat,
+            'longitude': lon,
             'heading': self.heading,
-            'bearing': bearing,  # Add standard bearing
-            'compass_heading': compass_heading,
-            'fix_quality': '3D Fix',  # Simulated fix quality
-            'satellite_count': random.randint(8, 12),  # Simulated satellite count
+            'bearing': standard_bearing,
+            'compass_heading': compass_direction,
+            'fix_quality': '3D Fix',
+            'satellite_count': random.randint(8, 12),
             'deviation': (self.navigator.calculate_deviation(self.x, self.y)
-                        if hasattr(self, 'navigator') and self.navigator else 0)
+                        if hasattr(self, 'navigator') and self.navigator else 0),  # Deviation in centimeters
+            'data_age': 0,
+            'status': 'OK'
         }
-        
+
+        # Debug: Verify run_id before logging
+        deviation_cm = log_data['deviation']
+        if deviation_cm > 0:
+            if deviation_cm < 5:
+                print(f"📏 Path deviation: {deviation_cm:.2f} cm (within RTK fixed tolerance)")
+            else:
+                print(f"⚠️ Path deviation: {deviation_cm:.2f} cm (exceeds 5 cm RTK fixed tolerance)")
+
+        # Log to CSV
         log_file_path = r'F:\GPS\task_2_waypoints\rover_log.csv'
         with open(log_file_path, 'a', newline='') as csvfile:
-            # Add 'bearing' to fieldnames
-            fieldnames = ['timestamp', 'run_id', 'x', 'y', 'heading', 'bearing', 'compass_heading', 
-                        'fix_quality', 'satellite_count', 'deviation']
+            fieldnames = ['timestamp', 'run_id', 'x_utm', 'y_utm', 'latitude', 'longitude',
+                        'heading', 'bearing', 'compass_heading', 'fix_quality', 'satellite_count',
+                        'deviation', 'data_age', 'status']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             if not os.path.exists(log_file_path) or os.path.getsize(log_file_path) == 0:
                 writer.writeheader()
             writer.writerow(log_data)
-        
+
         return True
     def get_compass_direction(self, heading):
         """
@@ -187,6 +217,7 @@ class Rover:
         
         # If file doesn't exist, start with run 1
         if not os.path.exists(log_file_path):
+            print("Debug: CSV file does not exist, returning run_id 1")
             return 1
             
         try:
@@ -195,18 +226,17 @@ class Rover:
             with open(log_file_path, 'r', newline='') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    if 'run_id' in row:
+                    if 'run_id' in row and row['run_id']:
                         try:
                             run_id = int(row['run_id'])
                             max_run_id = max(max_run_id, run_id)
                         except (ValueError, TypeError):
-                            pass
-            
-            # Return the next run ID
+                            continue
+            print(f"Debug: Max run_id found: {max_run_id}, returning {max_run_id + 1}")
             return max_run_id + 1
         except Exception as e:
-            print(f"Error determining run ID: {e}")
-            return 1  # Default to 1 if there's an error
+            print(f"Debug: Error reading run_id from CSV: {e}, returning 1")
+            return 1
 
     def set_geofence(self, vertices, entry_point):
         self.geofence = vertices
@@ -335,13 +365,15 @@ class RowNavigator:
         self.rover = rover
         self.interpolated_path = []
         self.current_waypoint_index = 0
-        self.waypoint_threshold = 0.3
+        self.waypoint_threshold = 0.02
         self.column_spacing = 1.5
         self.column_height = 15
-        self.movement_speed = 2.0
+        self.movement_speed = 1.5
         self.current_row = 0  # Track which row we're on
         self.zigzag_pattern = True  # Enable zigzag pattern by default
         self.rows_data = []  # Store information about each row
+        self.utm_offset_x = 0.0  # Initialize UTM offsets
+        self.utm_offset_y = 0.0
 
     def load_waypoints_from_csv(filename):
         """
@@ -370,100 +402,107 @@ class RowNavigator:
             return []
         
 
-   
     def load_rows_from_csv(self, csv_filename):
-        """
-        Load waypoints from CSV file (with columns x, y, row_index) 
-        and process them into rows_data and interpolated_path.
-        """
-        if not os.path.exists(csv_filename):
-            print(f"⚠️ Waypoints file not found: {csv_filename}")
-            return False
+            if not os.path.exists(csv_filename):
+                print(f"⚠️ Waypoints file not found: {csv_filename}")
+                return False
 
-        raw_points = []   # will hold tuples (row_idx, x, y)
-        xs, ys = [], []
+            raw_points = []
+            xs, ys = [], []
 
-        # 1) Read CSV and collect raw points plus min/max for normalization
-        with open(csv_filename, 'r') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                idx = int(row['row_index'])
-                x = float(row['x'])
-                y = float(row['y'])
-                raw_points.append((idx, x, y))
-                xs.append(x)
-                ys.append(y)
+            with open(csv_filename, 'r') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    idx = int(row['row_index'])
+                    x = float(row['x'])
+                    y = float(row['y'])
+                    raw_points.append((idx, x, y))
+                    xs.append(x)
+                    ys.append(y)
 
-        if not raw_points:
-            print("⚠️ No data in CSV.")
-            return False
+            if not raw_points:
+                print("⚠️ No data in CSV.")
+                return False
 
-        # 2) Compute normalization offsets
-        min_x, min_y = min(xs), min(ys)
+            # Store UTM offsets for use in coordinate conversion
+            self.utm_offset_x = min(xs)
+            self.utm_offset_y = min(ys)
 
-        # 3) Build the full interpolated_path (normalized)
-        self.interpolated_path = [
-            (x - min_x, y - min_y)
-            for (_, x, y) in raw_points
-        ]
+            # Build interpolated_path with normalized coordinates
+            self.interpolated_path = [
+                (x - self.utm_offset_x, y - self.utm_offset_y)
+                for (_, x, y) in raw_points
+            ]
 
-        # 4) Group by row_index in original order
-        grouped = OrderedDict()
-        for idx, x, y in raw_points:
-            grouped.setdefault(idx, []).append((x - min_x, y - min_y))
+            # Group by row_index
+            grouped = OrderedDict()
+            for idx, x, y in raw_points:
+                grouped.setdefault(idx, []).append((x - self.utm_offset_x, y - self.utm_offset_y))
 
-        # 5) Build rows_data
-        self.rows_data = []
-        for idx, pts in grouped.items():
-            start_pt = pts[0]
-            end_pt   = pts[-1]
-            direction = "↑ UP" if end_pt[1] > start_pt[1] else "↓ DOWN"
-            self.rows_data.append({
-                'index':     idx,
-                'x_pos':     start_pt[0],
-                'direction': direction,
-                'start':     start_pt,
-                'end':       end_pt
-            })
+            # Build rows_data
+            self.rows_data = []
+            for idx, pts in grouped.items():
+                start_pt = pts[0]
+                end_pt = pts[-1]
+                direction = "↑ UP" if end_pt[1] > start_pt[1] else "↓ DOWN"
+                self.rows_data.append({
+                    'index': idx,
+                    'x_pos': start_pt[0],
+                    'direction': direction,
+                    'start': start_pt,
+                    'end': end_pt
+                })
 
-        # 6) Print a clean plan
-        print("\n📋 CSV-based Navigation Plan:")
-        print(f"   Total waypoints: {len(self.interpolated_path)}")
-        print(f"   Estimated rows: {len(self.rows_data)}")
-        for row in self.rows_data:
-            print(f"   Row {row['index']+1}: "
-                  f"X-position {row['x_pos']:.2f}m, "
-                  f"Direction {row['direction']}")
+            print("\n📋 CSV-based Navigation Plan:")
+            print(f"   Total waypoints: {len(self.interpolated_path)}")
+            print(f"   Estimated rows: {len(self.rows_data)}")
+            print(f"   UTM Offsets: ({self.utm_offset_x:.2f}, {self.utm_offset_y:.2f})")
+            for row in self.rows_data:
+                print(f"   Row {row['index']+1}: "
+                    f"X-position {row['x_pos']:.2f}m, "
+                    f"Direction {row['direction']}")
 
-        return True
-    
+            return True
 
     # Add this method to your RowNavigator class
+
     def calculate_deviation(self, x, y):
-        """Calculate how far the rover is from the current path segment."""
         if not self.interpolated_path or len(self.interpolated_path) < 2:
             return 0
-            
-        # Find current path segment (between current and next waypoint)
-        current_index = min(self.current_waypoint_index, len(self.interpolated_path) - 2)
+        
+        if self.current_waypoint_index >= len(self.interpolated_path) - 1:
+            # Already at the last waypoint, no current segment
+            return 0
+        
+        current_index = self.current_waypoint_index
         next_index = current_index + 1
         
-        if current_index < 0 or next_index >= len(self.interpolated_path):
-            return 0
-            
         p1 = self.interpolated_path[current_index]
         p2 = self.interpolated_path[next_index]
         
-        # Calculate perpendicular distance to line segment
-        # Line equation: Ax + By + C = 0
-        A = p2[1] - p1[1]
-        B = p1[0] - p2[0]
-        C = p2[0]*p1[1] - p1[0]*p2[1]
+        x1, y1 = p1
+        x2, y2 = p2
         
-        # Distance formula: |Ax + By + C| / sqrt(A² + B²)
-        distance = abs(A*x + B*y + C) / math.sqrt(A*A + B*B) if (A*A + B*B) > 0 else 0
+        # Calculate t (parameter for projection onto the line)
+        dx = x2 - x1
+        dy = y2 - y1
+        if dx == 0 and dy == 0:
+            # p1 and p2 are the same point, so distance is to that point
+            return math.hypot(x - x1, y - y1) * 100  # Convert to cm
         
-        return distance
+        l2 = dx**2 + dy**2
+        t = ((x - x1) * dx + (y - y1) * dy) / l2
+        t = max(0, min(1, t))  # Clamp t to [0, 1]
+        
+        # Closest point on the segment
+        closest_x = x1 + t * dx
+        closest_y = y1 + t * dy
+        
+        # Distance from (x, y) to (closest_x, closest_y)
+        distance_m = math.hypot(x - closest_x, y - closest_y)
+        distance_cm = distance_m * 100  # Convert to cm
+        
+        return round(distance_cm, 2)
         
     def generate_rows(self, start_x, start_y, num_strips=5, strip_length=None, spacing=None):
         if spacing is None:
@@ -525,7 +564,8 @@ class RowNavigator:
                     trans_y = transition_y
                     self.interpolated_path.append((trans_x, trans_y))
                 
-        # Print row information
+        # Print 
+        # row information
         print("\n📋 Row Navigation Plan:")
         for row in self.rows_data:
             print(f"   Row {row['index']+1}: X-position {row['x_pos']:.2f}m, Direction {row['direction']}")
@@ -595,22 +635,29 @@ class RowNavigator:
     
     def move_precisely_to_point(self, target_point, ax=None, fig=None, rover_patch=None):
         """
-        Move rover to target point with precision at constant speed.
-        Includes logging for turn diagnostics.
+        Move rover to target point with precision at constant speed of 1.5 m/s.
+        Includes logging for turn diagnostics and minimum movement guarantee.
         """
         max_attempts = 40
         attempts = 0
         last_time = time.time()  # Initialize time tracking
+        min_move_distance = 0.05  # Minimum movement distance to prevent stops
         
-        print(f"🎯 Moving to point: ({target_point[0]:.2f}, {target_point[1]:.2f})")
+        print(f"🎯 Moving to point: ({target_point[0]:.2f}, {target_point[1]:.2f}) at {self.movement_speed} m/s")
         
         while attempts < max_attempts:
             if self.rover.failsafe.in_failsafe_mode:
                 print("⚠️ Rover is in failsafe mode, stopping movement.")
                 return False
+                
+            # Calculate time elapsed with minimum threshold
             current_time = time.time()
             time_elapsed = current_time - last_time
             last_time = current_time
+            
+            # Ensure minimum time step to prevent tiny movements
+            if time_elapsed < 0.01:
+                time_elapsed = 0.05  # Minimum time step
             
             current_pos = (self.rover.x, self.rover.y)
             dist_to_target = self.distance(current_pos, target_point)
@@ -624,7 +671,7 @@ class RowNavigator:
                 if ax and fig and rover_patch:
                     rover_patch = update_rover_visualization(self.rover, ax, fig, rover_patch)
                 return True
-                
+                    
             desired_heading = self.calculate_heading(current_pos, target_point)
             
             # Only turn if heading difference is significant
@@ -634,16 +681,21 @@ class RowNavigator:
                 self.smooth_turn(desired_heading, ax, fig, rover_patch)
             else:
                 print(f"✓ Heading diff {abs(heading_diff):.1f}° < 10°, no turn needed")
-                
-            # Calculate move_dist based on constant speed and elapsed time
+                    
+            # Calculate move_dist based on constant speed (1.5 m/s) and elapsed time
             move_dist = self.movement_speed * time_elapsed
-            if move_dist > dist_to_target:
-                move_dist = dist_to_target  # Prevent overshooting
             
+            # Ensure minimum movement distance
+            if move_dist < min_move_distance:
+                move_dist = min_move_distance
+            
+            # Don't overshoot target
+            if move_dist > dist_to_target:
+                move_dist = dist_to_target
             
             path = [(self.rover.x, self.rover.y),
                     (self.rover.x + move_dist * math.cos(math.radians(self.rover.heading)),
-                     self.rover.y + move_dist * math.sin(math.radians(self.rover.heading)))]
+                    self.rover.y + move_dist * math.sin(math.radians(self.rover.heading)))]
             
             status, _ = safety.check_safety([self.rover.x, self.rover.y], self.rover.heading, path)
             
@@ -655,13 +707,14 @@ class RowNavigator:
             else:
                 print(f"⚠️ Safety check failed: {status}")
                 return False
-                    
+                        
             attempts += 1
-            plt.pause(0.001)
-                
+            # Ensure consistent visualization frequency
+            if ax and fig:
+                plt.pause(0.001)
+                    
         print("⚠️ Max attempts reached")
         return False
-
 
     def navigate_to_starting_point(self, ax=None, fig=None, rover_patch=None):
         if not self.interpolated_path:
@@ -936,6 +989,15 @@ def get_float(prompt):
             print("⚠️ Please enter a valid number.")
 
 def navigate_to_point(rover, tx, ty, ax, fig, rover_patch=None, step_size=STEP, tolerance=TOLERANCE):
+    """
+    Navigate to a specific point using the rover's defined movement speed
+    """
+    # Use rover's movement speed if step_size not specified
+    if step_size is None and hasattr(rover, 'navigator') and hasattr(rover.navigator, 'movement_speed'):
+        step_size = rover.navigator.movement_speed
+    else:
+        step_size = STEP  # Fall back to default if not availabl
+    
     print(f"\n🚗 Navigating to point ({tx:.3f}, {ty:.3f})...\n")
     dist = rover.distance_to(tx,ty)
     attempts=0; last_dist=float('inf'); alt=False; blocked=0
@@ -1066,7 +1128,7 @@ def follow_path_precisely(rover, waypoints, ax, fig, rover_patch):
     print(f"\n🛣️ Following planned path with {len(waypoints)} waypoints...")
     
     # Constants for strict path following - adjusted for speed
-    PATH_STEP = 2.4  # Increased step size for faster movement (was 0.2)
+    PATH_STEP = rover.navigator.movement_speed  # Increased step size for faster movement (was 0.2)
     PATH_TOLERANCE = 0.05  # Small tolerance to enforce strict adherence
     ANIMATION_SPEED = 0.001  # Faster animation (was 0.01)
     ROTATION_STEP_FACTOR = 8  # Rotate faster
@@ -1140,154 +1202,3 @@ def follow_path_precisely(rover, waypoints, ax, fig, rover_patch):
         if rover.distance_to(*current_wp) > PATH_TOLERANCE:
             # Move to start point without teleporting
             remaining_dist = rover.distance_to(*current_wp)
-            segments = max(2, int(remaining_dist / PATH_STEP))
-            step_dist = remaining_dist / segments
-            
-            for _ in range(segments):
-                if rover.distance_to(*current_wp) <= PATH_TOLERANCE:
-                    break
-                success = rover.move_forward(step_dist, ax, fig, rover_patch)
-                if not success:
-                    # Try with smaller step if blocked
-                    rover.move_forward(step_dist/2, ax, fig, rover_patch)
-                rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
-                plt.pause(ANIMATION_SPEED)
-        
-        # Calculate appropriate number of interpolated points for this segment
-        num_interp = max(3, int(segment_len / PATH_STEP))
-        
-        # Move along the segment with precise steps
-        for j in range(1, num_interp + 1):
-            t = j / num_interp
-            interp_point = (
-                current_wp[0] + t * segment_vec[0],
-                current_wp[1] + t * segment_vec[1]
-            )
-            
-            # Always ensure heading is aligned with path
-            point_heading = rover.calculate_heading_to(*interp_point)
-            if abs((point_heading - rover.heading + 180) % 360 - 180) > 1:
-                rover_patch = visualize_turn(rover, point_heading, ax, fig, rover_patch, 
-                                            rotation_speed_factor=ROTATION_STEP_FACTOR)
-            
-            # Calculate exact distance to move
-            move_dist = rover.distance_to(*interp_point)
-            
-            # Move to interpolated point without teleporting
-            if move_dist > PATH_TOLERANCE:
-                success = rover.move_forward(move_dist, ax, fig, rover_patch)
-                
-                # If direct movement fails, try with smaller steps
-                if not success and move_dist > PATH_STEP:
-                    smaller_step = min(PATH_STEP, move_dist/2)
-                    success = rover.move_forward(smaller_step, ax, fig, rover_patch)
-                
-                rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
-                
-                # Visualize the actual path
-                actual_path.append((rover.x, rover.y))
-                if len(actual_path) > 1 and path_line:
-                    safe_remove(path_line)
-                if len(actual_path) > 1:
-                    path_x, path_y = zip(*actual_path)
-                    path_line = ax.plot(path_x, path_y, 'g-', linewidth=1, alpha=0.7)[0]
-                
-                fig.canvas.draw_idle()
-                plt.pause(ANIMATION_SPEED)
-                
-            # Safety check if available
-            if hasattr(safety, 'check_safety'):
-                status, _ = safety.check_safety([rover.x, rover.y], rover.heading, [(rover.x, rover.y), interp_point])
-                if status != 'safe':
-                    print("⚠️ Safety violation detected during path following!")
-                    return False, rover_patch
-    
-    # For the final waypoint, use exact positioning with proper movement
-    last_wp = waypoints[-1]
-    final_heading = rover.calculate_heading_to(*last_wp)
-    rover_patch = visualize_turn(rover, final_heading, ax, fig, rover_patch, rotation_speed_factor=ROTATION_STEP_FACTOR)
-    
-    # Move directly to last waypoint without teleporting
-    final_dist = rover.distance_to(*last_wp)
-    if final_dist > PATH_TOLERANCE:
-        # Break into smaller steps
-        segments = max(2, int(final_dist / PATH_STEP))
-        step_dist = final_dist / segments
-        
-        for _ in range(segments):
-            if rover.distance_to(*last_wp) <= PATH_TOLERANCE:
-                break
-            success = rover.move_forward(step_dist, ax, fig, rover_patch)
-            if not success:
-                # Try smaller step if blocked
-                rover.move_forward(step_dist/2, ax, fig, rover_patch)
-            rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
-            plt.pause(ANIMATION_SPEED)
-    
-    print("✅ Successfully followed the planned path with precision")
-    return True, rover_patch
-
-def safe_remove(element):
-    if element:
-        try:
-            element.remove()
-            return True
-        except:
-            if DEBUG: print(f"Warning: failed to remove {element}")
-    return False
-
-
-
-def run_simulation():
-    plt.rcParams['figure.max_open_warning'] = 50
-    rover = Rover()
-    print("🚜 Farm Rover Navigation Simulation 🚜")
-    print("=====================================")
-    farm_width = get_float(" Farm width: ")
-    farm_height = get_float(" Farm height: ")
-    min_x = -farm_width / 2
-    max_x = farm_width / 2
-    min_y = -farm_height / 2
-    max_y = farm_height / 2
-    verts = [(min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)]
-    entry_point = (0, min_y)
-    rover.set_geofence(verts, entry_point)
-    safety.set_geofence(verts)
-    plt.ion()
-    fig, ax = plt.subplots(figsize=(10, 8))
-    ax.set_title("Rover Farm Navigation Simulation")
-    margin = max(farm_width, farm_height) * 0.2
-    ax.set_xlim(min_x - margin, max_x + margin)
-    ax.set_ylim(min_y - margin, max_y + margin)
-    ax.grid(True)
-    fence = Polygon(np.array(verts), closed=True, facecolor='lightgreen', edgecolor='darkgreen', alpha=0.3)
-    ax.add_patch(fence)
-    ax.scatter(entry_point[0], entry_point[1], c='purple', s=100, marker='o', label='Farm Entry', zorder=10)
-    path_line, = ax.plot([], [], 'b-', alpha=0.5, label='Path')
-    ax.path_line = path_line
-    ax.legend(loc='upper left')
-    fig.canvas.draw_idle()
-    plt.pause(0.5)
-    rover.set_position(entry_point[0], entry_point[1], force=True, add_to_history=False)
-    rover.history.append((rover.x, rover.y))
-    rover_patch = update_rover_visualization(rover, ax, fig)
-    print(f"\n✅ Starting simulation at farm entry point: ({entry_point[0]:.2f}, {entry_point[1]:.2f})")
-    spacing = 1.5
-    start_x = min_x
-    start_y = min_y
-    strip_length = max_y - min_y
-    num_strips = math.floor((max_x - min_x) / spacing) + 1
-    row_navigator = RowNavigator(rover)
-    rover.navigator = row_navigator
-    row_navigator.generate_rows(start_x, start_y, num_strips, strip_length, spacing)
-    row_navigator.navigate_all_rows(ax, fig, rover_patch)
-    plt.ioff()
-    plt.show(block=True)
-
-if __name__ == "__main__":
-    try:
-        run_simulation()
-    except KeyboardInterrupt:
-        print("\n\n🛑 Simulation terminated by user.")
-    except Exception as e:
-        print(f"\n❌ Simulation error: {e}")
