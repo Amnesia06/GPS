@@ -3,7 +3,8 @@ import time
 import json
 import threading
 from coordinate_converter import CoordinateConverter
-
+import os
+from serial import SerialException
 class EmlidGPSReader:
     """
     Class to handle reading GPS data from an Emlid Reach GNSS receiver.
@@ -11,7 +12,7 @@ class EmlidGPSReader:
     and converts to UTM coordinates for the rover navigation system.
     """
     
-    def __init__(self, port='/dev/ttyACM0', baud_rate=115200, message_format='json'):
+    def __init__(self, port=None, baud_rate=115200, message_format='nmea'):
         """
         Initialize the Emlid GPS reader.
         
@@ -30,26 +31,47 @@ class EmlidGPSReader:
         self.last_position = None
         self.last_update_time = 0
         self.callbacks = []
-        
-    def connect(self):
+        self.port = port or self._autodetect_emlid_port()
+
+    def _autodetect_emlid_port(self):
+        # Common ports for Emlid M2 on Windows/Linux
+        possible_ports = ['COM3', 'COM8', '/dev/ttyACM0', '/dev/ttyUSB0']
+        for port in possible_ports:
+            if os.path.exists(port):
+                return port
+        raise Exception("Emlid M2 not found on common ports!")
+
+    def connect(self, retries=3, retry_delay=2):
         """
-        Connect to the Emlid receiver through serial port.
+        Connect to the Emlid receiver with retry logic.
+        
+        Args:
+            retries (int): Number of connection attempts (default: 3)
+            retry_delay (float): Delay between attempts in seconds (default: 2)
         
         Returns:
             bool: True if connection successful, False otherwise
         """
-        try:
-            self.serial_connection = serial.Serial(
-                port=self.port,
-                baudrate=self.baud_rate,
-                timeout=1
-            )
-            print(f"✅ Connected to Emlid receiver on {self.port}")
-            return True
-        except Exception as e:
-            print(f"❌ Failed to connect to Emlid receiver: {e}")
-            return False
-    
+        for attempt in range(1, retries + 1):
+            try:
+                self.serial_connection = serial.Serial(
+                    port=self.port,
+                    baudrate=self.baud_rate,
+                    timeout=1
+                )
+                print(f"✅ Connected to Emlid receiver on {self.port} (Attempt {attempt}/{retries})")
+                return True
+            except (serial.SerialException, OSError) as e:
+                retry_delay *= 1.5 
+                if attempt < retries:
+                    print(f"⚠️ Connection failed (Attempt {attempt}/{retries}): {e}")
+                    print(f"Retrying in {retry_delay}s...")
+                    time.sleep(retry_delay)
+                else:
+                    print(f"❌ Failed to connect after {retries} attempts")
+                    return False
+        return False
+        
     def disconnect(self):
         """Disconnect from the Emlid receiver."""
         if self.serial_connection and self.serial_connection.is_open:
@@ -163,50 +185,66 @@ class EmlidGPSReader:
         return None
     
     def _read_nmea(self):
-        """
-        Read and parse NMEA formatted GPS data from Emlid.
-        
-        Returns:
-            dict: Parsed GPS position data or None if no valid data
-        """
-        if not self.serial_connection:
-            return None
-            
+        """Parse NMEA sentences from Emlid M2 and return GPS data dictionary."""
         try:
-            line = self.serial_connection.readline().decode('utf-8').strip()
-            if not line or not line.startswith('$'):
-                return None
-                
-            # Parse NMEA GGA sentence
-            if line.startswith('$GPGGA') or line.startswith('$GNGGA'):
+            line = self.serial_connection.readline().decode('utf-8', errors='ignore').strip()
+            
+            # Parse GPRMC (Recommended Minimum Specific GNSS Data)
+            if line.startswith('$GPRMC'):
+                parts = line.split(',')
+                if len(parts) >= 10 and parts[2] == 'A':  # 'A' = Active/Valid fix
+                    lat = self._nmea_to_decimal(parts[3], parts[4])  # Latitude (DDMM.MMMM, N/S)
+                    lon = self._nmea_to_decimal(parts[5], parts[6])  # Longitude (DDDMM.MMMM, E/W)
+                    speed = float(parts[7]) if parts[7] else 0.0      # Speed in knots
+                    course = float(parts[8]) if parts[8] else 0.0     # Course in degrees
+                    
+                    return {
+                        'latitude': lat,
+                        'longitude': lon,
+                        'speed': speed * 0.514444,  # Convert knots to m/s
+                        'course': course,
+                        'fix_quality': 'RTK' if 'RTK' in line else 'GPS',  # Emlid-specific
+                        'timestamp': parts[1][:6]  # HHMMSS
+                    }
+            
+            # Parse GPGGA (Global Positioning System Fix Data)
+            elif line.startswith(('$GPGGA', '$GNGGA')):
                 parts = line.split(',')
                 if len(parts) >= 15:
-                    # Check if we have a valid fix
-                    fix_quality = int(parts[6]) if parts[6] else 0
-                    if fix_quality > 0:
-                        # Extract latitude
-                        lat = float(parts[2][:2]) + float(parts[2][2:]) / 60
-                        if parts[3] == 'S':
-                            lat = -lat
-                            
-                        # Extract longitude
-                        lon = float(parts[4][:3]) + float(parts[4][3:]) / 60
-                        if parts[5] == 'W':
-                            lon = -lon
-                            
-                        position = {
-                            'latitude': lat,
-                            'longitude': lon,
-                            'altitude': float(parts[9]) if parts[9] else 0,
-                            'fix_quality': ['No Fix', '2D Fix', '3D Fix'][min(fix_quality, 2)],
-                            'satellites': int(parts[7]) if parts[7] else 0,
-                            'hdop': float(parts[8]) if parts[8] else 0
-                        }
-                        return position
+                    return {
+                        'latitude': self._nmea_to_decimal(parts[2], parts[3]),
+                        'longitude': self._nmea_to_decimal(parts[4], parts[5]),
+                        'altitude': float(parts[9]) if parts[9] else 0.0,
+                        'satellites': int(parts[7]) if parts[7] else 0,
+                        'hdop': float(parts[8]) if parts[8] else 99.9,
+                        'fix_quality': {
+                            '0': 'Invalid',
+                            '1': 'GPS',
+                            '2': 'DGPS',
+                            '4': 'RTK Fixed',
+                            '5': 'RTK Float'
+                        }.get(parts[6], 'Unknown')
+                    }
+                    
         except Exception as e:
-            print(f"Error parsing NMEA GPS data: {e}")
-            
+            print(f"NMEA parsing error: {e}")
         return None
+
+    def _nmea_to_decimal(self, nmea_coord, direction):
+        """Convert NMEA coordinate (DDMM.MMMM) to decimal degrees."""
+        if not nmea_coord or not direction:
+            return 0.0
+        
+        try:
+            degrees = float(nmea_coord[:2]) if len(nmea_coord) > 2 else 0.0
+            minutes = float(nmea_coord[2:])
+            decimal = degrees + (minutes / 60.0)
+            
+            if direction in ('S', 'W'):
+                decimal *= -1
+            return decimal
+        except ValueError:
+            return 0.0
     
     def get_last_position(self):
         """
@@ -234,7 +272,7 @@ def update_rover_from_emlid(rover, emlid_reader):
             # Update failsafe module if available
             if hasattr(rover, 'failsafe'):
                 rover.failsafe.update_gps_status(
-                    has_fix=position['fix_quality'] != 'No Fix',
+                    has_fix = position['fix_quality'] in ['GPS', 'DGPS', 'RTK Fixed', 'RTK Float'],
                     satellites=position['satellites'],
                     hdop=position['hdop']
                 )
@@ -258,6 +296,16 @@ def setup_emlid_integration(rover):
     
     # Configure rover to use Emlid GPS data
     update_rover_from_emlid(rover, emlid_reader)
+    # Initialize the GPS reader
+    gps_reader = EmlidGPSReader()
+
+    # Try connecting with 5 retries and 3-second delays
+    success = gps_reader.connect(retries=5, retry_delay=3)
+
+    if success:
+        print("Connected! Starting data collection...")
+    else:
+        print("Failed to connect. Check hardware and try again.")
     
     # Start reading GPS data
     success = emlid_reader.start_reading()

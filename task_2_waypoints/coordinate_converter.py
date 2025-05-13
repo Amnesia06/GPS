@@ -24,11 +24,12 @@ class CoordinateConverter:
             tuple: (easting, northing) UTM coordinates in meters
         """
         try:
+            zone_number = int((lon + 180) // 6) + 1
             easting, northing, zone_number, zone_letter = utm.from_latlon(lat, lon)
-            return easting, northing
+            return easting, northing, zone_number, zone_letter
         except Exception as e:
             print(f"Error converting lat/lon to UTM: {e}")
-            return None, None
+            return None, None, None, None
             
     def utm_to_latlon_coord(self, easting, northing, zone_number=None, zone_letter=None):
         """

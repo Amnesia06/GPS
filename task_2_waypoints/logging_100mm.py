@@ -125,9 +125,46 @@ class GPSLogger:
             # Validate lat/lon ranges
             if lat is None or lon is None or not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
                 raise ValueError(f"Invalid lat/lon values: {lat}, {lon}")
-                
-            fix_quality = '3D Fix'
-            satellite_count = random.randint(8, 12)
+            
+            # Check for RTK status from Emlid M2
+            fix_quality = 'No Fix'
+            if hasattr(self.rover, 'emlid_data') and self.rover.emlid_data:
+                # Extract RTK fix status from Emlid data if available
+                if 'rtk_status' in self.rover.emlid_data:
+                    fix_quality = self.rover.emlid_data['rtk_status']
+                elif 'fix_quality' in self.rover.emlid_data:
+                    fix_quality = self.rover.emlid_data['fix_quality']
+            else:
+                # Determine RTK status based on NTRIP connection and other factors
+                if hasattr(self.rover, 'ntrip_client') and self.rover.ntrip_client:
+                    if hasattr(self.rover.ntrip_client, 'connected') and self.rover.ntrip_client.connected:
+                        if hasattr(self.rover, 'failsafe') and self.rover.failsafe:
+                            hdop = getattr(self.rover.failsafe, 'gps_hdop', 1.5)
+                            if hdop < 0.2:
+                                fix_quality = 'RTK Fixed'
+                            elif hdop < 0.5:
+                                fix_quality = 'RTK Float'
+                            elif hdop < 1.0:
+                                fix_quality = 'DGPS'
+                            else:
+                                fix_quality = 'GNSS'
+                        else:
+                            # Default to RTK Float when NTRIP connected but no detailed info
+                            fix_quality = 'RTK Float'
+                    else:
+                        fix_quality = 'GNSS'  # No NTRIP connection
+                else:
+                    fix_quality = 'GNSS'  # Fallback for simulation
+            
+            satellite_count = 0
+            # Try to get actual satellite count from emlid data or failsafe
+            if hasattr(self.rover, 'emlid_data') and self.rover.emlid_data and 'satellites' in self.rover.emlid_data:
+                satellite_count = self.rover.emlid_data['satellites']
+            elif hasattr(self.rover, 'failsafe') and hasattr(self.rover.failsafe, 'gps_satellites'):
+                satellite_count = self.rover.failsafe.gps_satellites
+            else:
+                satellite_count = random.randint(8, 12)  # Fallback for simulation
+            
             status = 'OK'
         except Exception as e:
             print(f"⚠️ Error converting UTM to Lat/Lon: {e}")
@@ -258,7 +295,7 @@ def update_rover_position_from_emlid(rover, emlid_data):
     
     Args:
         rover: The rover instance
-        emlid_data: Dictionary containing 'latitude' and 'longitude' from Emlid receiver
+        emlid_data: Dictionary containing 'latitude', 'longitude', and RTK status from Emlid receiver
     
     Returns:
         bool: True if position was updated successfully, False otherwise
@@ -268,6 +305,25 @@ def update_rover_position_from_emlid(rover, emlid_data):
         return False
         
     try:
+        # Store the Emlid data in the rover for later use by GPS logger
+        rover.emlid_data = emlid_data
+        
+        # Process RTK fix status if available
+        if 'solution_status' in emlid_data:
+            # Map Emlid's solution_status values to our standardized RTK status values
+            status_mapping = {
+                'fixed': 'RTK Fixed',
+                'float': 'RTK Float',
+                'single': 'GNSS',
+                'dgps': 'DGPS',
+                'none': 'No Fix',
+                'autonomous': 'GNSS',
+            }
+            
+            # Store fix quality with our standardized values
+            emlid_data['rtk_status'] = status_mapping.get(emlid_data['solution_status'].lower(), 'GNSS')
+            
+        # Process the emlid GPS data
         easting, northing = rover.gps_logger.process_emlid_gps_data(emlid_data)
         if easting is not None and northing is not None:
             return True

@@ -12,6 +12,9 @@ from sleep_mode import FailsafeModule, GPSFailsafeReason, DriftSeverity, DriftAc
 from rover_health_check import RoverHealthCheck, HealthCheckFailure
 # Import coordinate converter
 from coordinate_converter import CoordinateConverter
+import threading
+from ntrip_client import NTRIPClient
+
 
 debug = False
 safety = SafetyModule()
@@ -168,6 +171,27 @@ def run_simulation():
     # Now initialize GPS logger
     gps_logger = logging_100mm.initialize_gps_logger(rover)
     
+    NTRIP_CONFIG = {
+    'host': 'your.ntrip.server.url',
+    'port': 2101,
+    'mountpoint': 'MOUNTPOINT',
+    'user': 'your_username',
+    'password': 'your_password'
+    }
+
+
+    
+    ntrip_client = NTRIPClient(**NTRIP_CONFIG)
+    
+    # Start NTRIP corrections in a background thread
+    def stream_rtcm_corrections():
+        for rtcm_data in ntrip_client.get_corrections():
+            if hasattr(rover, 'gps_reader'):  # Ensure EmlidGPSReader is attached
+                rover.gps_reader.send_rtcm_data(rtcm_data)
+    
+    ntrip_thread = threading.Thread(target=stream_rtcm_corrections, daemon=True)
+    ntrip_thread.start()
+    # === END ADDITION ===
     # Create row navigator
     navigator = RowNavigator(rover)
     rover.navigator = navigator
@@ -381,20 +405,34 @@ def run_simulation():
     logging_100mm.stop_gps_logger(rover)
     failsafe.stop_monitoring()
 
-
 def simulate_emlid_gps_reading():
     """
     Simulate an Emlid GPS reading for testing purposes.
-    Returns a dictionary with lat/lon coordinates.
+    Returns a dictionary with lat/lon coordinates and RTK status.
     """
     # These are example coordinates - in a real implementation,
     # you would get these from the Emlid GPS receiver
+    
+    # Randomly choose a solution status for demonstration
+    solution_statuses = ["fixed", "float", "single", "dgps"]
+    solution_status = random.choice(solution_statuses)
+    
+    # Determine appropriate HDOP based on solution status
+    if solution_status == "fixed":
+        hdop = random.uniform(0.01, 0.2)
+    elif solution_status == "float":
+        hdop = random.uniform(0.2, 0.5)
+    elif solution_status == "dgps":
+        hdop = random.uniform(0.5, 1.0)
+    else:  # single
+        hdop = random.uniform(1.0, 2.0)
+    
     return {
-        'latitude': 28.6139,      # Example latitude
-        'longitude': 77.2090,     # Example longitude
-        'fix_quality': '3D Fix',  # GPS fix quality
-        'satellites': 10,         # Number of satellites
-        'hdop': 0.9               # Horizontal dilution of precision
+        'latitude': 28.6139,              # Example latitude
+        'longitude': 77.2090,             # Example longitude
+        'solution_status': solution_status,  # RTK solution status from Emlid
+        'satellites': random.randint(8, 15),  # Number of satellites
+        'hdop': hdop                      # Horizontal dilution of precision
     }
 
 def test_emlid_integration():
