@@ -4665,3 +4665,592 @@
 2025-05-14 00:36:34,783,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
 2025-05-14 00:36:34,798,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
 2025-05-14 00:36:34,809,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:26,975,rover_health,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-05-14 00:53:26,978,rover_health,INFO,All health checks automatically passed for simulation mode
+2025-05-14 00:53:26,981,rover_failsafe,INFO,FailsafeModule initialized in simulation mode
+2025-05-14 00:53:28,638,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:28,638,rover_failsafe,INFO,Failsafe monitoring started
+2025-05-14 00:53:28,646,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:28,652,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:28,681,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:28,681,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:28,857,rover_failsafe,INFO,Injecting simulated failure: High DOP (PDOP >3.0 for >5000ms)
+2025-05-14 00:53:28,857,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:28,875,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:29,166,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:29,166,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:29,166,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:29,383,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:29,400,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:29,412,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:29,412,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:29,435,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:29,613,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:29,622,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:29,627,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:29,627,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:30,629,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:30,633,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:30,633,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:30,637,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:30,651,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:30,656,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:30,854,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:30,854,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:30,854,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:30,854,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:31,909,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:32,117,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:32,117,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:32,145,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:32,148,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:32,148,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:32,350,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:32,381,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:32,632,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:32,648,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:32,651,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:32,836,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:32,852,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:32,883,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:32,899,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:32,923,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:33,096,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:33,099,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:33,107,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:33,115,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:33,763,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:53:33.763393", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": false, "drift_severity": "No drift", "recommended_action": "Pause movement"}
+2025-05-14 00:53:34,126,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:34,170,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:34,173,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:34,173,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:34,173,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:34,173,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:34,551,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:34,613,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:34,629,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:34,629,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:34,644,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:34,835,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:34,835,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:34,835,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:34,835,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:35,874,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:35,968,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:36,320,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:36,473,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:36,497,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:36,505,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:36,724,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:36,766,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:36,798,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:36,798,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:36,854,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:37,007,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:37,119,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:37,199,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:37,239,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:37,303,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:37,423,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:37,431,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:37,479,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:37,495,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:37,495,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:37,684,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:37,695,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:37,719,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:37,735,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:37,743,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:37,926,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:37,927,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:37,943,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:37,951,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:38,957,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:53:38.957874", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": false, "drift_severity": "No drift", "recommended_action": "Pause movement"}
+2025-05-14 00:53:38,961,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:39,169,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:39,170,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:39,170,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:39,170,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:40,174,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:40,276,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:40,294,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:40,303,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:40,303,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:40,316,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:40,506,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:40,525,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:40,541,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:40,541,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:42,554,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:42,713,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:42,713,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:42,715,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:42,715,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:42,715,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:42,915,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:42,915,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:42,917,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:42,917,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:43,921,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:43,964,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:43,977,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:44,009,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:44,017,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:44,017,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:53:44.017749", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS data stale (>300ms without NMEA fix)", "in_recovery": true, "in_sleep_mode": false, "drift_severity": "No drift", "recommended_action": "Pause movement"}
+2025-05-14 00:53:44,033,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:44,238,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:44,242,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:44,274,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:44,338,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:44,338,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:44,476,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:44,476,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:44,490,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:44,490,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:44,490,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:44,694,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:44,723,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:44,795,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:44,803,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:44,811,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:45,003,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:45,045,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:45,164,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:45,174,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:45,189,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:45,405,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:45,630,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:45,959,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:46,076,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:49,157,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:53:49.157211", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS data stale (>300ms without NMEA fix)", "in_recovery": true, "in_sleep_mode": false, "drift_severity": "No drift", "recommended_action": "Pause movement"}
+2025-05-14 00:53:54,447,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:53:54.447465", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS data stale (>300ms without NMEA fix)", "in_recovery": true, "in_sleep_mode": false, "drift_severity": "No drift", "recommended_action": "Pause movement"}
+2025-05-14 00:53:56,440,rover_failsafe,ERROR,Recovery failed for: GPS data stale (>300ms without NMEA fix), entering sleep mode
+2025-05-14 00:53:56,441,rover_failsafe,WARNING,Entering sleep mode for 300 seconds
+2025-05-14 00:53:56,442,rover_failsafe,ERROR,Error signaling safety module: 'SafetyModule' object has no attribute 'emergency_stop'
+2025-05-14 00:53:56,794,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:56,819,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:56,835,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:56,851,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:57,957,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:58,165,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:58,166,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:58,166,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:58,166,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:58,166,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:58,371,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:58,374,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:58,382,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:58,382,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:59,399,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:59,423,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:59,447,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:59,463,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:53:59,463,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:53:59,463,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:53:59,667,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:59,667,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:53:59,695,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:53:59,695,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:53:59,703,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:53:59.703806", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:04,680,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:04.680183", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:05,710,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:05,892,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:05,908,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:05,924,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:05,948,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:06,955,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:06,982,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:06,990,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:06,998,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:07,006,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:07,022,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:07,206,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:07,216,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:07,222,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:07,222,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:09,699,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:09.699006", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:10,264,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:10,309,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:10,318,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:10,335,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:10,335,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:10,335,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:10,536,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:10,552,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:10,560,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:10,560,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:13,570,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:13,578,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:13,578,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:13,618,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:13,634,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:13,642,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:13,820,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:13,828,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:13,828,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:13,828,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:14,839,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:14.839612", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:19,867,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:19.867866", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:22,875,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:23,316,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:23,324,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:23,356,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:23,356,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:24,378,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:24,458,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:24,458,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:24,464,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:24,464,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:24,464,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:24,682,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:24,689,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:24,705,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:24,721,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:24,914,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:24.914643", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:28,860,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:29,260,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:29,425,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:29,533,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:29,557,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:29,565,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:29,741,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:29,908,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:30,597,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:30,605,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:30,693,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:30,798,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:30,798,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:30,805,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:30,805,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:30.805651", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS data stale (>300ms without NMEA fix)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:30,805,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:30,805,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:31,029,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:31,101,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:31,181,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:31,205,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:31,213,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:31,388,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:31,398,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:31,470,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:31,486,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:32,488,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:32,633,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:32,656,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:32,667,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:32,672,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:34,684,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:34,790,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:34,829,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:34,933,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:34,965,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:35,971,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:35.971706", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:37,985,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:38,050,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:38,074,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:38,082,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:38,098,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:39,099,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:39,110,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:39,110,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:39,126,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:39,142,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:39,142,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:39,334,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:39,334,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:39,334,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:39,343,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:41,035,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:41.035545", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:41,344,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:41,474,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:41,477,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:41,489,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:41,489,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:41,489,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:41,690,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:41,695,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:41,735,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:41,735,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:45,812,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:46,020,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:46,029,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:46,044,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:46,052,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:46,068,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:46,260,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:46,277,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:46,285,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:46,285,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:46.285231", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:46,285,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:50,319,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:50,361,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:50,380,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:50,417,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:50,417,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:50,417,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:50,620,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:50,626,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:50,634,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:50,642,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:51,453,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:51.453774", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:53,648,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:53,682,rover_failsafe,INFO,Injecting simulated failure: Complete internet loss (no corrections >5000ms AND no cell >10000ms)
+2025-05-14 00:54:53,682,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:53,686,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:53,694,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:53,694,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:53,694,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:53,897,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:53,902,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:53,926,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:53,926,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:56,612,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:54:56.612690", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:54:56,965,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:57,125,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:57,598,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:57,638,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:57,654,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:57,670,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:58,110,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:58,366,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:58,454,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:58,470,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:58,510,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:58,658,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:58,671,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:58,991,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:59,112,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:54:59,144,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:59,216,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:59,232,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:59,232,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:54:59,240,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:54:59,240,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:54:59,441,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:59,457,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:54:59,537,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:54:59,537,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:00,639,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:00,841,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:00,846,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:00,863,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:00,871,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:01,625,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:55:01.625372", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:55:01,875,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:02,051,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:02,075,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:02,083,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:02,083,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:02,099,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:02,286,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:02,307,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:02,339,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:02,339,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:06,683,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:55:06.683220", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:55:08,358,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:08,525,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:08,532,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:08,548,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:08,548,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:09,592,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:09,763,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:09,763,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:09,776,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:09,776,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:11,829,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:11,829,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:55:11.829826", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:55:12,202,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:12,202,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:12,262,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:12,262,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:12,270,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:12,470,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:12,478,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:12,486,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:12,486,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:13,495,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:13,502,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:13,506,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:13,506,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:13,506,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:13,522,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:13,731,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:13,771,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:13,779,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:13,779,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:14,791,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:14,997,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:14,997,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:15,008,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:15,008,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:15,008,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:15,212,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:15,217,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:15,225,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:15,233,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:16,837,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:55:16.837665", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:55:20,253,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:20,291,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:20,315,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:20,338,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:20,340,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:20,445,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:20,788,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:20,788,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:20,796,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:20,812,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:20,812,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:20,998,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:20,998,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:21,005,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:21,005,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:21,877,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:55:21.877842", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:55:22,012,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:22,133,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:22,134,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:22,134,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:22,142,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:22,142,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:22,340,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:22,350,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:22,358,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:22,366,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:23,386,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:23,607,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:23,610,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:23,610,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:23,628,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:23,628,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:23,817,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:23,818,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:23,826,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:23,854,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:24,857,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:25,058,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:25,065,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:25,081,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:25,081,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:26,087,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:26,297,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:26,297,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:26,302,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:26,302,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:26,945,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:55:26.945387", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:55:31,423,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:31,671,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:31,775,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:31,855,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:31,855,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:31,863,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:32,059,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:32,064,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:32,072,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:32,072,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:55:32.072827", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:55:32,080,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:33,114,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:33,146,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:33,178,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:33,299,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:33,315,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:33,363,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:33,506,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:33,522,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:33,554,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:33,554,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:34,595,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:34,722,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:34,723,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:34,723,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:55:34,723,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:55:34,723,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:55:34,927,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:34,933,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:55:34,941,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:55:34,941,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:55:37,217,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:55:37.217405", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": true, "drift_severity": "No drift", "recommended_action": "Enter sleep mode"}
+2025-05-14 00:56:46,768,rover_health,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-05-14 00:56:46,843,rover_health,INFO,All health checks automatically passed for simulation mode
+2025-05-14 00:56:46,843,rover_failsafe,INFO,FailsafeModule initialized in simulation mode
+2025-05-14 00:56:49,105,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:49,105,rover_failsafe,INFO,Failsafe monitoring started
+2025-05-14 00:56:49,125,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:49,133,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:56:49,133,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:56:49,133,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:49,344,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:49,344,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:49,344,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:56:49,344,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:56:51,353,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:51,488,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:51,488,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:51,495,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:56:51,495,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:56:51,495,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:51,696,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:51,702,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:51,711,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:56:51,718,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:56:52,731,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:52,923,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:52,923,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:52,923,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:56:52,923,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:56:52,923,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:53,127,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:53,202,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:53,202,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:56:53,217,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:56:53,279,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:53,419,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:53,427,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:53,431,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:56:53,435,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:56:53,443,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:53,636,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:53,636,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:53,636,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:56:53,636,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:56:54,244,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:56:54.244517", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": false, "drift_severity": "No drift", "recommended_action": "Pause movement"}
+2025-05-14 00:56:57,646,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:57,662,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:57,662,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:57,664,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:56:57,664,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:56:57,664,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:56:57,868,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:57,874,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:56:57,876,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:56:57,876,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:56:59,306,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:56:59.306045", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": false, "drift_severity": "No drift", "recommended_action": "Pause movement"}
+2025-05-14 00:57:00,913,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:01,016,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:57:01,031,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:57:01,051,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:57:01,083,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:57:01,098,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:57:01,291,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:01,480,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:01,731,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:57:01,750,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:57:02,832,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:03,075,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:57:03,162,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:57:03,252,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:57:03,252,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:57:03,252,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:57:03,484,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:03,638,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:03,648,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:57:03,659,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:57:04,464,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-14T00:57:04.464946", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": false, "drift_severity": "No drift", "recommended_action": "Pause movement"}
+2025-05-14 00:57:04,669,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:04,773,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:05,236,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:05,236,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-14 00:57:05,236,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+2025-05-14 00:57:07,271,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-14 00:57:07,367,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:57:07,368,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+2025-05-14 00:57:07,368,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-14 00:57:07,368,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-14 00:57:07,368,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)
