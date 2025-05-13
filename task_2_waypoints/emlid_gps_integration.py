@@ -70,7 +70,17 @@ class EmlidGPSReader:
                 else:
                     print(f"❌ Failed to connect after {retries} attempts")
                     return False
-        return False
+        return True
+    
+    def send_rtcm_data(self, rtcm_bytes: bytes):
+        """
+        Send raw RTCM correction bytes to the Emlid unit.
+        """
+        if self.serial_connection and self.serial_connection.is_open:
+            try:
+                self.serial_connection.write(rtcm_bytes)
+            except Exception as e:
+                print(f"⚠️ Failed to send RTCM data: {e}")
         
     def disconnect(self):
         """Disconnect from the Emlid receiver."""
