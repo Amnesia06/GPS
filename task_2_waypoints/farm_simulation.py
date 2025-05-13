@@ -14,7 +14,7 @@ from rover_health_check import RoverHealthCheck, HealthCheckFailure
 from coordinate_converter import CoordinateConverter
 import threading
 from ntrip_client import NTRIPClient
-from emlid_gps_integration import EmlidGPSReader
+from emlid_gps_integration import EmlidGPSReader,update_rover_from_emlid, setup_emlid_integration
 
 
 debug = False
@@ -172,12 +172,17 @@ def run_simulation():
     # Now initialize GPS logger
     gps_logger = logging_100mm.initialize_gps_logger(rover)
     # Initialize GPS reader for NMEA and corrections
+    # Initialize GPS reader and attach to rover
     emlid_reader = EmlidGPSReader(message_format='nmea')
-    if not emlid_reader.connect(retries=5, retry_delay=3):
+    update_rover_from_emlid(rover, emlid_reader)
+
+    success = emlid_reader.connect(retries=5, retry_delay=3)
+    if not success:
         print("❌ Failed to connect to Emlid receiver")
         return
+
     emlid_reader.start_reading()
-    rover.gps_reader = emlid_reader
+    rover.gps_reader = emlid_reader  # Attach to rover so NTRIP thread can use it
 
     
     
