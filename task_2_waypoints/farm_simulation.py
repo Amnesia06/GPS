@@ -173,16 +173,38 @@ def run_simulation():
     gps_logger = logging_100mm.initialize_gps_logger(rover)
     # Initialize GPS reader for NMEA and corrections
     # Initialize GPS reader and attach to rover
-    emlid_reader = EmlidGPSReader(message_format='nmea')
-    update_rover_from_emlid(rover, emlid_reader)
+        # ── Dual-mode GPS setup: real Emlid M2 → else simulated loop ──
+    simulate_gps = False
 
-    success = emlid_reader.connect(retries=5, retry_delay=3)
-    if not success:
-        print("❌ Failed to connect to Emlid receiver")
-        return
+    try:
+        if not simulate_gps:
+            # ---- Attempt real Emlid M2 ----
+            emlid_reader = EmlidGPSReader(message_format='nmea')
+            update_rover_from_emlid(rover, emlid_reader)
 
-    emlid_reader.start_reading()
-    rover.gps_reader = emlid_reader  # Attach to rover so NTRIP thread can use it
+            if emlid_reader.connect(retries=5, retry_delay=3):
+                emlid_reader.start_reading()
+                rover.gps_reader = emlid_reader
+                print("✅ Emlid M2 connected and streaming NMEA + RTCM")
+            else:
+                print("⚠️ Emlid not found — falling back to simulation")
+                simulate_gps = True
+    except Exception as e:
+        print(f"⚠️ Emlid init failed: {e}\n🔄 Using simulated GPS instead")
+        simulate_gps = True
+
+    if simulate_gps:
+        # ---- Start simulated-GPS thread ----
+        def gps_simulation_loop():
+            while True:
+                fake = simulate_emlid_gps_reading()
+                logging_100mm.update_rover_position_from_emlid(rover, fake)
+                time.sleep(1.0)
+
+        threading.Thread(target=gps_simulation_loop, daemon=True).start()
+        print("🧪 GPS simulation started (no hardware connected)")
+    # ───────────────────────────────────────────────────────────────────
+
 
     
     

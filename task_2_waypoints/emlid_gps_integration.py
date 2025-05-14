@@ -5,6 +5,8 @@ import threading
 from coordinate_converter import CoordinateConverter
 import os
 from serial import SerialException
+simulate_gps = False  # Set to True if you want to force simulation even if Emlid is connected
+
 class EmlidGPSReader:
     """
     Class to handle reading GPS data from an Emlid Reach GNSS receiver.
