@@ -1,3 +1,4 @@
+import random
 import serial
 import time
 import json
@@ -129,14 +130,34 @@ class EmlidGPSReader:
         if callback_func in self.callbacks:
             self.callbacks.remove(callback_func)
     
+    def _simulate_gps_data(self):
+        """Return simulated GPS data for testing."""
+        return {
+            'latitude': 28.6139,
+            'longitude': 77.2090,
+            'altitude': 216.0,
+            'satellites': random.randint(8, 12),
+            'hdop': random.uniform(0.8, 1.5),
+            'fix_quality': random.choice(['GPS', 'DGPS', 'RTK Fixed', 'RTK Float'])
+        }
+
     def _read_loop(self):
         """Main loop for reading GPS data from the serial port."""
         while not self.stop_thread.is_set():
             try:
-                if self.message_format == 'json':
-                    position = self._read_json()
+                if simulate_gps:
+                    position = self._simulate_gps_data()
                 else:
-                    position = self._read_nmea()
+                    if not self.serial_connection or not self.serial_connection.is_open:
+                        print("⚠️ Serial connection lost, attempting to reconnect...")
+                        if not self.connect():
+                            time.sleep(1)
+                            continue
+                    
+                    if self.message_format == 'json':
+                        position = self._read_json()
+                    else:
+                        position = self._read_nmea()
                     
                 if position:
                     self.last_position = position
@@ -157,10 +178,13 @@ class EmlidGPSReader:
                         except Exception as e:
                             print(f"Error in GPS callback: {e}")
             
+            except serial.SerialException as e:
+                print(f"Serial error: {e}, retrying in 1s...")
+                self.disconnect()
+                time.sleep(1)
             except Exception as e:
                 print(f"Error reading GPS data: {e}")
-                time.sleep(1)  # Wait before retrying
-    
+                time.sleep(1)
     def _read_json(self):
         """
         Read and parse JSON formatted GPS data from Emlid.
@@ -195,32 +219,13 @@ class EmlidGPSReader:
             print(f"Error parsing JSON GPS data: {e}")
             
         return None
-    
     def _read_nmea(self):
         """Parse NMEA sentences from Emlid M2 and return GPS data dictionary."""
         try:
             line = self.serial_connection.readline().decode('utf-8', errors='ignore').strip()
             
-            # Parse GPRMC (Recommended Minimum Specific GNSS Data)
-            if line.startswith('$GPRMC'):
-                parts = line.split(',')
-                if len(parts) >= 10 and parts[2] == 'A':  # 'A' = Active/Valid fix
-                    lat = self._nmea_to_decimal(parts[3], parts[4])  # Latitude (DDMM.MMMM, N/S)
-                    lon = self._nmea_to_decimal(parts[5], parts[6])  # Longitude (DDDMM.MMMM, E/W)
-                    speed = float(parts[7]) if parts[7] else 0.0      # Speed in knots
-                    course = float(parts[8]) if parts[8] else 0.0     # Course in degrees
-                    
-                    return {
-                        'latitude': lat,
-                        'longitude': lon,
-                        'speed': speed * 0.514444,  # Convert knots to m/s
-                        'course': course,
-                        'fix_quality': 'RTK' if 'RTK' in line else 'GPS',  # Emlid-specific
-                        'timestamp': parts[1][:6]  # HHMMSS
-                    }
-            
             # Parse GPGGA (Global Positioning System Fix Data)
-            elif line.startswith(('$GPGGA', '$GNGGA')):
+            if line.startswith(('$GPGGA', '$GNGGA')):
                 parts = line.split(',')
                 if len(parts) >= 15:
                     return {
@@ -237,7 +242,24 @@ class EmlidGPSReader:
                             '5': 'RTK Float'
                         }.get(parts[6], 'Unknown')
                     }
-                    
+            
+            # Parse GPRMC (Recommended Minimum Specific GNSS Data)
+            elif line.startswith('$GPRMC'):
+                parts = line.split(',')
+                if len(parts) >= 10 and parts[2] == 'A':  # 'A' = Active/Valid fix
+                    lat = self._nmea_to_decimal(parts[3], parts[4])
+                    lon = self._nmea_to_decimal(parts[5], parts[6])
+                    speed = float(parts[7]) * 0.514444 if parts[7] else 0.0
+                    course = float(parts[8]) if parts[8] else 0.0
+                    return {
+                        'latitude': lat,
+                        'longitude': lon,
+                        'speed': speed,
+                        'course': course,
+                        'fix_quality': 'GPS',  # GPRMC does not provide RTK status
+                        'timestamp': parts[1][:6]
+                    }
+                        
         except Exception as e:
             print(f"NMEA parsing error: {e}")
         return None
@@ -292,7 +314,6 @@ def update_rover_from_emlid(rover, emlid_reader):
     # Register the callback with the Emlid reader
     emlid_reader.register_callback(on_gps_data)
 
-
 def setup_emlid_integration(rover):
     """
     Set up Emlid GPS integration with the rover.
@@ -308,12 +329,10 @@ def setup_emlid_integration(rover):
     
     # Configure rover to use Emlid GPS data
     update_rover_from_emlid(rover, emlid_reader)
-    # Initialize the GPS reader
-    gps_reader = EmlidGPSReader()
-
+    
     # Try connecting with 5 retries and 3-second delays
-    success = gps_reader.connect(retries=5, retry_delay=3)
-
+    success = emlid_reader.connect(retries=5, retry_delay=3)
+    
     if success:
         print("Connected! Starting data collection...")
     else:
