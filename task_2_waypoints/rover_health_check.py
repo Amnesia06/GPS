@@ -37,7 +37,7 @@ class HealthCheckFailure(Exception):
 
 class RTKGPSRover:
     """Base class for RTK GPS functionality to be used with the health check module."""
-    def __init__(self, port='COM8', baudrate=115200, log_data=True, log_path='gps_logs'):
+    def __init__(self, port='COM12', baudrate=115200, log_data=True, log_path='gps_logs'):
         # Configure the serial connection
         try:
             self.ser = serial.Serial(
@@ -149,7 +149,32 @@ class RoverHealthCheck:
             'battery_level': False,
             'hardware_status': False
         }
-    
+
+
+    def _check_gps_system(self):
+        """Verify GPS system health"""
+        if not hasattr(self.rover, 'gps_reader'):
+            logging.warning("No GPS reader found")
+            return False
+            
+        if not self.rover.gps_reader.is_connected():
+            logging.warning("GPS not connected")
+            return False
+            
+        position = self.rover.gps_reader.last_position
+        if not position:
+            logging.warning("No GPS position data")
+            return False
+            
+        satellites = position.get('satellites', 0)
+        hdop = position.get('hdop', 99.9)
+        
+        if satellites < 4 or hdop > 5.0:
+            logging.warning(f"Poor GPS quality: {satellites} sats, HDOP {hdop:.1f}")
+            return False
+            
+        return True
+        
     def check_antenna_placement(self):
         """Check antenna placement by verifying satellite count and signal strength."""
         satellites = self.rtk_rover.satellites
@@ -552,7 +577,7 @@ class RoverHealthCheck:
 if __name__ == "__main__":
     # First create the RTK GPS rover instance
     # Replace COM port as needed for your setup
-    rover = RTKGPSRover(port='COM3', baudrate=115200, log_data=True)
+    rover = RTKGPSRover(port='COM12', baudrate=115200, log_data=True)
     
     # Then create the health checker using the rover
     health_checker = RoverHealthCheck(rover)

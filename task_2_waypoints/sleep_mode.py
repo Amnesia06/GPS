@@ -21,6 +21,7 @@ import os
 from typing import Callable, Dict, List, Optional, Tuple, Union
 from datetime import datetime
 import pynmea2
+from enum import Enum
 
 # Configure logging
 import logging
@@ -55,7 +56,7 @@ class GPSFailsafeReason(enum.Enum):
     GPS_WEAK_CONSTELLATION = "Weak constellation (<6 satellites for >5000ms)"
     GPS_MULTIPATH = "Signal multipath (C/N₀ drop >10dB-Hz for >5000ms)"
     RTK_FIX_LOST = "RTK fix lost (>10000ms without RTK-FIX)"
-    INTERNET_CONNECTION_SLOW = "High NTRIP latency (avg correction age >1000ms for >10000ms)"
+    INTERNET_CONNECTION_SLOW = "Internet Connection Slow"
     INTERNET_CONNECTION_LOST = "Complete internet loss (no corrections >5000ms AND no cell >10000ms)"
     MODULE_COMMUNICATION_FAILURE = "Module communication failure"
     UNKNOWN = "Unknown GPS failure"
@@ -64,10 +65,10 @@ class GPSFailsafeReason(enum.Enum):
 
 # Enum for drift severity levels
 class DriftSeverity(enum.Enum):
-    NONE = "No drift"
-    LOW = "Low drift (within tolerable limits)"
-    MEDIUM = "Medium drift (concerning)"
-    HIGH = "High drift (critical)"
+    NONE = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
 
 # Enum for drift action responses
 class DriftAction(enum.Enum):
@@ -91,6 +92,11 @@ class FailsafeModule:
         self.last_module_comm = time.time()
         self.last_position_check = time.time()
         
+        self.monitoring = False
+        self._on_failsafe = None
+        self._on_recovery = None
+
+
         # Serial connection parameters
         self.port = port
         self.baud_rate = baud_rate

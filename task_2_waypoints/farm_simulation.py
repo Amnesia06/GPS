@@ -15,10 +15,150 @@ from coordinate_converter import CoordinateConverter
 import threading
 from ntrip_client import NTRIPClient
 from emlid_gps_integration import EmlidGPSReader,update_rover_from_emlid, setup_emlid_integration
+from gps_system_monitor import GPSSystemMonitor
+import sys
+import logging 
 
+logging.basicConfig(level=logging.INFO,
+                   format='%(asctime)s - %(levelname)s - %(message)s')
+
+def global_error_handler(type, value, traceback):
+    print(f"❌ Uncaught error: {value}")
+    cleanup_resources()
+    sys.__excepthook__(type, value, traceback)
+
+sys.excepthook = global_error_handler
+
+
+# Add after the imports
+def display_gps_info(emlid_data):
+    """Display current GPS information"""
+    print("\n=== GPS Status ===")
+    print(f"Fix Type: {emlid_data.get('solution_status', 'Unknown')}")
+    print(f"Satellites: {emlid_data.get('satellites', 0)}")
+    print(f"HDOP: {emlid_data.get('hdop', 0.0):.2f}")
+    print(f"Position: {emlid_data.get('latitude', 0.0):.8f}°N, "
+          f"{emlid_data.get('longitude', 0.0):.8f}°E")
+    print("================\n")
+
+
+# Add after the imports section
+rover = None
+ntrip_client = None
+failsafe = None
+gps_thread = None
+
+def check_gps_status():
+    """Check GPS quality and connection status"""
+    global rover
+    if not rover or not hasattr(rover, 'gps_reader'):
+        return False
+    
+    position = rover.gps_reader.last_position
+    if not position:
+        return False
+        
+    satellites = position.get('satellites', 0)
+    hdop = position.get('hdop', 99.9)
+    fix_type = position.get('solution_status', 'Unknown')
+    
+    # Log GPS status
+    print(f"\nGPS Status:")
+    print(f"Fix Type: {fix_type}")
+    print(f"Satellites: {satellites}")
+    print(f"HDOP: {hdop:.1f}")
+    
+    # Check minimum requirements
+    return (satellites >= 4 and 
+            hdop < 5.0 and 
+            fix_type in ['GPS', 'DGPS', 'RTK Fixed', 'RTK Float'])
+
+
+
+def gps_reading_loop():
+    """GPS data reading loop for real or simulated data"""
+    while True:
+        try:
+            if hasattr(rover, 'gps_reader'):
+                if rover.gps_reader.simulate_gps:
+                    fake = simulate_emlid_gps_reading()
+                    logging_100mm.update_rover_position_from_emlid(rover, fake)
+                    display_gps_info(fake)
+                else:
+                    # Real GPS data
+                    if rover.gps_reader.last_position:
+                        display_gps_info(rover.gps_reader.last_position)
+            time.sleep(1.0)
+        except Exception as e:
+            print(f"GPS reading error: {e}")
+            time.sleep(1.0)
+
+def setup_ntrip(rover, emlid_reader):
+    """Setup NTRIP connection and corrections"""
+    try:
+        NTRIP_CONFIG = {
+            'host': 'your.ntrip.server.url',
+            'port': 2101,
+            'mountpoint': 'MOUNTPOINT',
+            'user': 'your_username',
+            'password': 'your_password'
+        }
+        
+        ntrip_client = NTRIPClient(**NTRIP_CONFIG)
+        
+        # Test NTRIP connection
+        if not ntrip_client.connect():
+            raise Exception("Failed to connect to NTRIP server")
+            
+        # Start RTCM corrections thread
+        def stream_rtcm():
+            for rtcm_data in ntrip_client.get_corrections():
+                if hasattr(rover, 'gps_reader'):
+                    rover.gps_reader.send_rtcm_data(rtcm_data)
+                    
+        ntrip_thread = threading.Thread(target=stream_rtcm, daemon=True)
+        ntrip_thread.start()
+        
+        return True
+    except Exception as e:
+        print(f"NTRIP setup failed: {e}")
+        return False
+def setup_gps_with_optional_ntrip(rover, use_ntrip=False):
+    """Setup GPS with optional NTRIP"""
+    try:
+        # Initialize Emlid reader
+        emlid_reader = EmlidGPSReader(port='COM12', message_format='nmea')
+        emlid_reader.simulate_gps = False  # Use real Emlid data
+        
+        # Register callback
+        update_rover_from_emlid(rover, emlid_reader)
+        
+        # Attempt connection
+        if emlid_reader.connect(retries=5, retry_delay=3):
+            print("✅ Emlid M2 connected successfully")
+            emlid_reader.start_reading()
+            rover.gps_reader = emlid_reader
+            
+            if use_ntrip:
+                try:
+                    # Only try NTRIP if requested
+                    setup_ntrip(rover, emlid_reader)
+                except Exception as e:
+                    print(f"⚠️ NTRIP setup failed: {e} - continuing without corrections")
+            else:
+                print("ℹ️ Running without NTRIP corrections")
+            return True
+        else:
+            print("❌ Emlid connection failed")
+            return False
+            
+    except Exception as e:
+        print(f"⚠️ GPS setup error: {e}")
+        return False
 
 debug = False
 safety = SafetyModule()
+
 
 def get_float(prompt):
     """Get a float value from user with error handling"""
@@ -104,22 +244,54 @@ def process_emlid_gps_data(rover, emlid_data):
     except Exception as e:
         print(f"Error processing Emlid GPS data: {e}")
         return False
+
+def display_ntrip_status(ntrip_client):
+        print("\n=== NTRIP Status ===")
+        print(f"Connected: {ntrip_client.connected}")
+        print("===================\n")
+def handle_gps_error(error):
+    """Handle GPS-related errors"""
+    print(f"\n⚠️ GPS Error: {error}")
+    print("Attempting recovery...")
+    
+    try:
+        if hasattr(rover, 'gps_reader'):
+            rover.gps_reader.disconnect()
+            time.sleep(2)
+            rover.gps_reader.connect()
+            rover.gps_reader.start_reading()
+            print("✅ GPS reconnected successfully")
+    except Exception as e:
+        print(f"❌ GPS recovery failed: {e}")
+
 def run_simulation():
+    global rover, ntrip_client, failsafe  
     def on_failsafe_triggered(reason):
         print(f"⚠️ Failsafe triggered: {reason.value}")
         rover.log_movement("stop")  # Stop the rover for safety
 
+    # Update the on_recovery_attempt function
     def on_recovery_attempt(reason):
         print(f"🔄 Attempting recovery from {reason.value}")
         current_time = time.time()
-        if reason == GPSFailsafeReason.GPS_STALE_DATA or reason == GPSFailsafeReason.GPS_DATA_LOSS:
-            failsafe.last_gps_update = current_time
-        elif reason == GPSFailsafeReason.INTERNET_CONNECTION_LOST or reason == GPSFailsafeReason.INTERNET_CONNECTION_SLOW:
-            failsafe.last_internet_check = current_time
-        elif reason == GPSFailsafeReason.MODULE_COMMUNICATION_FAILURE:
-            failsafe.last_module_comm = current_time
-        return True  # Assume recovery succeeds for simulation
-        
+        try:
+            if reason == GPSFailsafeReason.GPS_STALE_DATA or reason == GPSFailsafeReason.GPS_DATA_LOSS:
+                failsafe.last_gps_update = current_time
+                return handle_gps_error("GPS data loss")
+            elif reason == GPSFailsafeReason.INTERNET_CONNECTION_LOST or reason == GPSFailsafeReason.INTERNET_CONNECTION_SLOW:
+                failsafe.last_internet_check = current_time
+                return True  # Continue without internet
+            elif reason == GPSFailsafeReason.MODULE_COMMUNICATION_FAILURE:
+                failsafe.last_module_comm = current_time
+                return handle_gps_error("Module communication failure")
+            return True
+        except Exception as e:
+            print(f"Recovery attempt failed: {e}")
+            return False
+   
+    # Add periodic NTRIP status check
+
+
     print("🚜 Farm Rover Navigation Simulation 🚜")
     print("=====================================")
      
@@ -164,6 +336,7 @@ def run_simulation():
 
     # Initialize failsafe first
     rover.failsafe = failsafe
+    
     failsafe.update_gps_status(has_fix=True, satellites=10, hdop=1.0)
     failsafe.update_internet_status(connected=True, latency=0.1)
     failsafe.update_module_communication()
@@ -171,63 +344,90 @@ def run_simulation():
     
     # Now initialize GPS logger
     gps_logger = logging_100mm.initialize_gps_logger(rover)
-    # Initialize GPS reader for NMEA and corrections
-    # Initialize GPS reader and attach to rover
-        # ── Dual-mode GPS setup: real Emlid M2 → else simulated loop ──
-    simulate_gps = False
+    print("\n📡 Setting up Emlid GPS integration...")
+    gps_success = setup_gps_with_optional_ntrip(rover, use_ntrip=False)
 
+     # Add GPS monitoring
     try:
-        if not simulate_gps:
-            # ---- Attempt real Emlid M2 ----
-            emlid_reader = EmlidGPSReader(message_format='nmea')
-            update_rover_from_emlid(rover, emlid_reader)
-
-            if emlid_reader.connect(retries=5, retry_delay=3):
-                emlid_reader.start_reading()
-                rover.gps_reader = emlid_reader
-                print("✅ Emlid M2 connected and streaming NMEA + RTCM")
-            else:
-                print("⚠️ Emlid not found — falling back to simulation")
-                simulate_gps = True
+        print("\nChecking GPS status...")
+        if not check_gps_status():
+            print("⚠️ Poor GPS quality or no fix")
+        else:
+            print("✅ GPS quality acceptable")
+        gps_monitor = GPSSystemMonitor(emlid_reader, ntrip_client)
+        gps_monitor.start_monitoring()
+        print("✅ GPS monitoring started")
     except Exception as e:
-        print(f"⚠️ Emlid init failed: {e}\n🔄 Using simulated GPS instead")
-        simulate_gps = True
+        logging.error(f"Failed to start GPS monitoring: {e}")
+        gps_success = False
 
-    if simulate_gps:
-        # ---- Start simulated-GPS thread ----
+    if not gps_success:
+        print("⚠️ Falling back to simulated GPS")
+        emlid_reader = EmlidGPSReader(port='COM12', message_format='nmea')
+        emlid_reader.simulate_gps = True
+        
         def gps_simulation_loop():
             while True:
                 fake = simulate_emlid_gps_reading()
                 logging_100mm.update_rover_position_from_emlid(rover, fake)
+                display_gps_info(fake)
                 time.sleep(1.0)
-
+        
         threading.Thread(target=gps_simulation_loop, daemon=True).start()
-        print("🧪 GPS simulation started (no hardware connected)")
-    # ───────────────────────────────────────────────────────────────────
-
+        print("🧪 GPS simulation started")
 
     
-    
-    NTRIP_CONFIG = {
-    'host': 'your.ntrip.server.url',
-    'port': 2101,
-    'mountpoint': 'MOUNTPOINT',
-    'user': 'your_username',
-    'password': 'your_password'
-    }
+    # Add after this block (around line 367-370):
+    if not gps_success:
+        print("⚠️ Falling back to simulated GPS")
+        emlid_reader = EmlidGPSReader(port='COM12', message_format='nmea')
+        emlid_reader.simulate_gps = True
 
+    # Add the new visualization code here
+    if gps_success:  # When using real Emlid
+        print("✅ Real GPS mode - Visualization will follow actual position")
+        
+        # Remove simulated path planning
+        # Keep only the waypoints visualization
+        x_coords, y_coords = zip(*navigator.interpolated_path)
+        ax.plot(x_coords, y_coords, 'b--', alpha=0.5, label='Planned Path')
+        
+        def update_visualization():
+            while True:
+                if rover.gps_reader and rover.gps_reader.last_position:
+                    # Update rover marker position
+                    rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
+                    
+                    # Add trail of actual movement
+                    if len(rover.history) > 1:
+                        x_hist, y_hist = zip(*rover.history[-2:])
+                        ax.plot(x_hist, y_hist, 'g-', alpha=0.5)
+                    
+                    # Update display
+                    fig.canvas.draw_idle()
+                    plt.pause(0.1)  # 10Hz update rate
+                    
+        # Start visualization in separate thread
+        viz_thread = threading.Thread(target=update_visualization, daemon=True)
+        viz_thread.start()
+
+ 
+
+    try:
+        print("Starting GPS monitoring...")
+        gps_thread = threading.Thread(target=gps_reading_loop, daemon=True)
+        gps_thread.start()
+
+        # Add GPS status monitoring - add this part
+        gps_status_thread = threading.Thread(target=gps_status_monitor, daemon=True)
+        gps_status_thread.start()
+        print("✅ GPS monitoring active")
+    except Exception as e:
+        logging.error(f"Failed to start GPS monitoring: {e}")
+        gps_success = False
 
     
-    ntrip_client = NTRIPClient(**NTRIP_CONFIG)
     
-    # Start NTRIP corrections in a background thread
-    def stream_rtcm_corrections():
-        for rtcm_data in ntrip_client.get_corrections():
-            if hasattr(rover, 'gps_reader'):  # Ensure EmlidGPSReader is attached
-                rover.gps_reader.send_rtcm_data(rtcm_data)
-    
-    ntrip_thread = threading.Thread(target=stream_rtcm_corrections, daemon=True)
-    ntrip_thread.start()
     # === END ADDITION ===
     # Create row navigator
     navigator = RowNavigator(rover)
@@ -442,6 +642,33 @@ def run_simulation():
     logging_100mm.stop_gps_logger(rover)
     failsafe.stop_monitoring()
 
+def cleanup_resources():
+    """Clean up all resources"""
+    global rover, ntrip_client, failsafe, gps_thread
+    print("\nCleaning up resources...")
+    
+    try:
+        if rover and hasattr(rover, 'gps_reader'):
+            print("Disconnecting GPS...")
+            rover.gps_reader.disconnect()
+        
+        if ntrip_client:
+            print("Cleaning up NTRIP...")
+            ntrip_client.cleanup()
+        
+        if rover:
+            print("Stopping GPS logger...")
+            logging_100mm.stop_gps_logger(rover)
+            
+        if failsafe:
+            print("Stopping failsafe monitoring...")
+            failsafe.stop_monitoring()
+        plt.close('all')    
+            
+        print("✅ Cleanup complete")
+    except Exception as e:
+        print(f"❌ Cleanup error: {e}")
+
 def simulate_emlid_gps_reading():
     """
     Simulate an Emlid GPS reading for testing purposes.
@@ -471,6 +698,30 @@ def simulate_emlid_gps_reading():
         'satellites': random.randint(8, 15),  # Number of satellites
         'hdop': hdop                      # Horizontal dilution of precision
     }
+
+def gps_status_monitor():
+    """Monitor GPS status and quality"""
+    global rover
+    while True:
+        try:
+            if rover and hasattr(rover, 'gps_reader'):
+                if rover.gps_reader.last_position:
+                    fix_type = rover.gps_reader.last_position.get('solution_status', 'Unknown')
+                    satellites = rover.gps_reader.last_position.get('satellites', 0)
+                    hdop = rover.gps_reader.last_position.get('hdop', 0.0)
+                    
+                    if fix_type == 'fixed':
+                        print("🟢 RTK Fixed")
+                    elif fix_type == 'float':
+                        print("🟡 RTK Float")
+                    else:
+                        print("🔴 No RTK")
+                        
+                    print(f"Satellites: {satellites}, HDOP: {hdop:.2f}")
+            time.sleep(5)  # Update every 5 seconds
+        except Exception as e:
+            print(f"GPS status monitor error: {e}")
+            time.sleep(1)
 
 def test_emlid_integration():
     """
@@ -537,6 +788,9 @@ def test_emlid_integration():
     logging_100mm.stop_gps_logger(rover)
     print("🧪 Test completed")
 
+
+
+
 if __name__ == "__main__":
     try:
         # Uncomment to test Emlid integration separately
@@ -551,3 +805,8 @@ if __name__ == "__main__":
         # For debugging:
         import traceback
         traceback.print_exc()
+    finally:
+        cleanup_resources()  # This will now work correctly
+
+
+

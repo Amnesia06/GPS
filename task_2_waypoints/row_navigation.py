@@ -1202,3 +1202,5 @@ def follow_path_precisely(rover, waypoints, ax, fig, rover_patch):
         if rover.distance_to(*current_wp) > PATH_TOLERANCE:
             # Move to start point without teleporting
             remaining_dist = rover.distance_to(*current_wp)
+
+       
