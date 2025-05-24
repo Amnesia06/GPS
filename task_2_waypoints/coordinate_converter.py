@@ -6,13 +6,11 @@ class CoordinateConverter:
     Handles conversion between WGS84 lat/lon coordinates (EPSG:4326) and 
     UTM coordinates (EPSG:32645 - UTM zone 45N) for the rover navigation system.
     """
+    def __init__(self, zone_number=43, zone_letter='N'):
+        # Set the default UTM zone for Pune (Zone 43N)
+        self.zone_number = zone_number
+        self.zone_letter = zone_letter
     
-    def __init__(self):
-        # Default UTM zone for EPSG:32645 is zone 45N
-        self.default_zone = 45
-        self.default_zone_letter = 'N'
-        self.zone_number = None
-        self.zone_letter = None
     def latlon_to_utm_coord(self, lat, lon):
         try:
             easting, northing, zone_number, zone_letter = utm.from_latlon(lat, lon)
@@ -26,20 +24,20 @@ class CoordinateConverter:
 
     def utm_to_latlon_coord(self, easting, northing, zone_number=None, zone_letter=None):
         """
-        Convert UTM coordinates (EPSG:32645) to latitude/longitude (EPSG:4326).
+        Convert UTM coordinates to latitude/longitude (EPSG:4326).
 
         Args:
             easting (float): UTM easting coordinate in meters
             northing (float): UTM northing coordinate in meters
-            zone_number (int, optional): UTM zone number. Defaults to stored or 45.
-            zone_letter (str, optional): UTM zone letter. Defaults to stored or 'N'.
+            zone_number (int, optional): UTM zone number. Defaults to 43.
+            zone_letter (str, optional): UTM zone letter. Defaults to 'N'.
 
         Returns:
             tuple: (latitude, longitude) in decimal degrees or (None, None) if conversion fails
         """
         try:
-            zone_number = zone_number or self.zone_number or self.default_zone
-            zone_letter = zone_letter or self.zone_letter or self.default_zone_letter
+            zone_number = zone_number or self.zone_number
+            zone_letter = zone_letter or self.zone_letter
             lat, lon = utm.to_latlon(easting, northing, zone_number, zone_letter)
             return lat, lon
         except Exception as e:

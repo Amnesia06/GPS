@@ -1654,7 +1654,7 @@ def test_emlid_integration():
         # Convert back to lat/lon for verification
         lat, lon = converter.utm_to_latlon_coord(
             actual_easting, actual_northing,
-            zone_number=45, zone_letter='N'  # Make sure to use the correct zone
+            zone_number=43, zone_letter='N'  # Make sure to use the correct zone
         )
         print(f"🌐 Rover position (Lat/Lon): {lat:.6f}, {lon:.6f}")
         

@@ -94,7 +94,7 @@ class Rover:
 
         # Convert UTM to lat/lon
         lat, lon = self.coord_converter.utm_to_latlon_coord(
-            self.utm_x, self.utm_y, zone_number=45, zone_letter='N'
+            self.utm_x, self.utm_y, zone_number=43, zone_letter='N'
         )
         if lat is None or lon is None:
             print("⚠️ Failed to convert UTM to lat/lon, using fallback values")
@@ -119,7 +119,7 @@ class Rover:
         standard_bearing = (90 - self.heading) % 360
 
         # Terminal output (real-world coordinates only)
-        print(f"📍 UTM: [{self.utm_x:.2f}, {self.utm_y:.2f}] (Zone 45N)")
+        print(f"📍 UTM: [{self.utm_x:.2f}, {self.utm_y:.2f}] (Zone 43N)")
         print(f"📍 Lat/Lon: [{lat:.6f}°N, {lon:.6f}°E]")
         print(f"📍 Heading: {self.heading:.1f}° (Compass Heading: {standard_bearing:.1f}° {compass_direction})")
 
