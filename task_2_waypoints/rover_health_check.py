@@ -16,6 +16,7 @@ from pyproj import Proj
 import numpy as np
 from datetime import datetime, timezone
 import csv
+import sys
 
 # Configure logging
 LOG_PATH = r'F:\GPS\task_2_waypoints\rover_health.csv'
@@ -37,66 +38,70 @@ class HealthCheckFailure(Exception):
 
 class RTKGPSRover:
     """Base class for RTK GPS functionality to be used with the health check module."""
-    def __init__(self, port='COM12', baudrate=115200, log_data=True, log_path='gps_logs'):
-        # Configure the serial connection
-        try:
-            self.ser = serial.Serial(
-                port=port,
-                baudrate=baudrate,
-                timeout=1
-            )
-            print(f"Connected to: {self.ser.port}")
-        except serial.SerialException:
-            print(f"Warning: Could not connect to serial port {port}. Using simulation mode.")
-            self.ser = None
-        
-        # Data storage
-        self.latitude = 0.0
-        self.longitude = 0.0
-        self.altitude = 0.0
-        self.fix_quality = 4  # Default to RTK Fixed for simulation
-        self.satellites = 10  # Default satellite count for simulation
-        self.hdop = 1.0  # Default HDOP for simulation
-        self.speed = 0.0  # in knots
-        self.course = 0.0  # in degrees
-        self.fix_time = datetime.now().strftime('%H:%M:%S')
-        self.log_data = log_data
-        
-        # Quality indicator strings
-        self.fix_quality_str = {
-            0: "Invalid",
-            1: "GPS Fix",
-            2: "DGPS Fix",
-            4: "RTK Fixed",
-            5: "RTK Float",
-            6: "Estimated (DR) Fix"
-        }
-        
-        # Additional fields for health check
-        self.pdop = 1.2  # Default value for simulation
-        self.vdop = 1.0  # Default value for simulation
-        self.age_of_corrections = 1.0  # Default for simulation
-        self.age_of_corrections_ms = 50  # Default in milliseconds for simulation
-        self.satellites_data = [{'prn': f'{i}', 'elevation': 45+i, 'snr': 45+i} for i in range(10)]
-        self.constellations = ['GPS', 'GLONASS']  # Default for simulation
-        self.average_snr = 45  # Default for simulation
-        self.min_elevation = 15  # Default for simulation
-        self.time_diff = 0.02  # Default for simulation
-        self.time_diff_ns = 20  # Default in nanoseconds for simulation
-        self.pps_jitter_ns = 15  # Default PPS jitter in nanoseconds
-        self.easting = 500000  # Default for simulation
-        self.northing = 3000000  # Default for simulation
-        self.rtk_init_time = 15  # Default RTK initialization time in seconds
-        
-        # Farm boundary coordinates (configurable)
-        self.LAT_MIN, self.LAT_MAX = 12.345, 12.678
-        self.LON_MIN, self.LON_MAX = 76.543, 76.876
-        
-        # Logging setup
-        if log_data and not os.path.exists(log_path):
-            os.makedirs(log_path)
-        
-        print(f"RTK GPS Rover initialized. {'Logging enabled.' if log_data else 'Logging disabled.'}")
+    def __init__(self, port='COM12', baudrate=115200, log_data=True, log_path='gps_logs',existing_connection=None):
+        if existing_connection:
+            self.ser = existing_connection
+            print(f"Using existing connection to: {self.ser.port}")
+        else:
+            # Configure the serial connection
+            try:
+                self.ser = serial.Serial(
+                    port=port,
+                    baudrate=baudrate,
+                    timeout=1
+                )
+                print(f"Connected to: {self.ser.port}")
+            except serial.SerialException:
+                print(f"Warning: Could not connect to serial port {port}. Using simulation mode.")
+                self.ser = None
+            
+            # Data storage
+            self.latitude = 0.0
+            self.longitude = 0.0
+            self.altitude = 0.0
+            self.fix_quality = 4  # Default to RTK Fixed for simulation
+            self.satellites = 10  # Default satellite count for simulation
+            self.hdop = 1.0  # Default HDOP for simulation
+            self.speed = 0.0  # in knots
+            self.course = 0.0  # in degrees
+            self.fix_time = datetime.now().strftime('%H:%M:%S')
+            self.log_data = log_data
+            
+            # Quality indicator strings
+            self.fix_quality_str = {
+                0: "Invalid",
+                1: "GPS Fix",
+                2: "DGPS Fix",
+                4: "RTK Fixed",
+                5: "RTK Float",
+                6: "Estimated (DR) Fix"
+            }
+            
+            # Additional fields for health check
+            self.pdop = 1.2  # Default value for simulation
+            self.vdop = 1.0  # Default value for simulation
+            self.age_of_corrections = 1.0  # Default for simulation
+            self.age_of_corrections_ms = 50  # Default in milliseconds for simulation
+            self.satellites_data = [{'prn': f'{i}', 'elevation': 45+i, 'snr': 45+i} for i in range(10)]
+            self.constellations = ['GPS', 'GLONASS']  # Default for simulation
+            self.average_snr = 45  # Default for simulation
+            self.min_elevation = 15  # Default for simulation
+            self.time_diff = 0.02  # Default for simulation
+            self.time_diff_ns = 20  # Default in nanoseconds for simulation
+            self.pps_jitter_ns = 15  # Default PPS jitter in nanoseconds
+            self.easting = 500000  # Default for simulation
+            self.northing = 3000000  # Default for simulation
+            self.rtk_init_time = 15  # Default RTK initialization time in seconds
+            
+            # Farm boundary coordinates (configurable)
+            self.LAT_MIN, self.LAT_MAX = 12.345, 12.678
+            self.LON_MIN, self.LON_MAX = 76.543, 76.876
+            
+            # Logging setup
+            if log_data and not os.path.exists(log_path):
+                os.makedirs(log_path)
+            
+            print(f"RTK GPS Rover initialized. {'Logging enabled.' if log_data else 'Logging disabled.'}")
     
     def read_nmea_data(self, num_lines=10, timeout=1):
         """
@@ -149,6 +154,12 @@ class RoverHealthCheck:
             'battery_level': False,
             'hardware_status': False
         }
+
+        global_connection = getattr(sys.modules['__main__'], 'global_serial_connection', None)
+        
+        # Initialize the RTK GPS rover with the existing connection if available
+        self.rtk_rover = RTKGPSRover(existing_connection=global_connection)
+
 
 
     def _check_gps_system(self):

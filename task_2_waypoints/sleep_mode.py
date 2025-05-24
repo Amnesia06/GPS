@@ -87,6 +87,7 @@ class FailsafeModule:
     def __init__(self, port: str = "COM8", baud_rate: int = 115200, simulation_mode: bool = True):
         self.snr_values = {}
         # Initialize timestamps
+
         self.last_gps_update = time.time()
         self.last_internet_check = time.time()
         self.last_module_comm = time.time()

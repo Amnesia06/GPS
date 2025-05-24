@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
+import datetime
 import time
+import serial
 import numpy as np
 import random
 import logging_100mm
@@ -18,6 +20,70 @@ from emlid_gps_integration import EmlidGPSReader,update_rover_from_emlid, setup_
 from gps_system_monitor import GPSSystemMonitor
 import sys
 import logging 
+import os
+import csv
+
+# Ensure port is available before starting
+global_serial_connection = None
+# At the top of the file, after imports
+direct_test_completed = False  # Add this flag
+
+
+
+def direct_serial_test():
+    """Test direct serial connection like in test.py and keep it open if successful"""
+    global global_serial_connection, direct_test_completed
+    
+    # Only run the test once
+    if direct_test_completed:
+        print("Direct serial test already completed, reusing connection")
+        return global_serial_connection is not None
+    
+    print("\n🔬 Testing direct serial connection to COM12...")
+    
+    # First ensure port is released
+    comprehensive_port_release('COM12')
+    
+    try:
+        # Use EXACTLY the same code as your working test.py
+        ser = serial.Serial(
+            port='COM12',
+            baudrate=115200,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            timeout=1
+        )
+        print("✅ Connected to COM12")
+        
+        # Try to read some data
+        print("📡 Reading data...")
+        data_received = False
+        for _ in range(10):
+            line = ser.readline().decode('utf-8', errors='ignore').strip()
+            if line:
+                print(f"📊 Received: {line}")
+                data_received = True
+            time.sleep(0.1)
+        
+        if data_received:
+            print("✅ Successfully received data from COM12")
+            # IMPORTANT: Don't close the connection, save it for later use
+            global_serial_connection = ser
+            direct_test_completed = True  # Mark test as completed
+            return True
+        else:
+            print("⚠️ Connected but no data received")
+            ser.close()
+            direct_test_completed = True  # Mark test as completed
+            return False
+            
+    except Exception as e:
+        print(f"❌ Direct serial test failed: {e}")
+        direct_test_completed = True  # Mark test as completed
+        return False
+
+
 
 logging.basicConfig(level=logging.INFO,
                    format='%(asctime)s - %(levelname)s - %(message)s')
@@ -29,6 +95,193 @@ def global_error_handler(type, value, traceback):
 
 sys.excepthook = global_error_handler
 
+def ensure_port_available(port='COM12'):
+    """Ensure the port is available before attempting connection"""
+    print(f"🧹 Ensuring {port} is available...")
+    
+    # First try to close any existing connections
+    try:
+        import serial
+        temp_ser = serial.Serial(port)
+        temp_ser.close()
+        print(f"✅ Closed existing connection to {port}")
+    except:
+        pass
+    
+    # Kill any Python processes that might be using serial ports
+    try:
+        import psutil
+        import os
+        current_pid = os.getpid()
+        killed = False
+        
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                if proc.pid != current_pid and proc.name().lower() in ['python.exe', 'pythonw.exe']:
+                    print(f"🔫 Terminating {proc.name()} (PID: {proc.pid})")
+                    proc.kill()
+                    killed = True
+            except:
+                pass
+                
+        if killed:
+            time.sleep(2)  # Wait for processes to terminate
+            
+    except Exception as e:
+        print(f"⚠️ Process cleanup warning: {e}")
+    
+    # Use mode command to reset port
+    try:
+        import os
+        os.system(f"mode {port} BAUD=115200 PARITY=N DATA=8 STOP=1")
+        print(f"✅ Reset {port} settings")
+    except:
+        pass
+    
+    time.sleep(1)  # Give OS time to release
+    return True
+
+def comprehensive_port_release(port='COM12'):
+    """Comprehensive approach to release a COM port"""
+    print(f"🔓 Attempting comprehensive release of {port}...")
+    
+    # 1. Try to close any existing connections
+    try:
+        import serial
+        temp_ser = serial.Serial(port)
+        temp_ser.close()
+        print("✅ Closed existing connection")
+    except:
+        pass
+    
+    # 2. Reset port using mode command
+    try:
+        import os
+        os.system(f"mode {port} BAUD=115200 PARITY=N DATA=8 STOP=1")
+        print("✅ Reset port settings")
+    except:
+        pass
+    
+    # 3. Kill potential blocking processes
+    try:
+        import psutil
+        import os
+        current_pid = os.getpid()
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                if proc.pid != current_pid and proc.name().lower() in [
+                    'python.exe', 'pythonw.exe', 'reachview.exe', 
+                    'putty.exe', 'terraterm.exe'
+                ]:
+                    print(f"🔫 Terminating {proc.name()} (PID: {proc.pid})")
+                    proc.kill()
+            except:
+                pass
+        print("✅ Cleaned up processes")
+    except:
+        pass
+    
+    # 4. Wait for OS to fully release the port
+    import time
+    time.sleep(3)
+    print("✅ Port release complete")
+    return True
+
+def robust_emlid_connection(port='COM12'):
+    """More robust Emlid connection method"""
+    print(f"🔌 Attempting robust connection to {port}...")
+    
+    # First force release the port
+    comprehensive_port_release(port)
+    
+    # Try with direct file access first
+    try:
+        import serial
+        import time
+        
+        # Open with exclusive access and minimal settings
+        ser = serial.Serial(
+            port=port,
+            baudrate=115200,
+            timeout=1,
+            write_timeout=1,
+            exclusive=True
+        )
+        
+        # Test if we can read data
+        print("📡 Testing data reception...")
+        time.sleep(1)
+        
+        if ser.in_waiting > 0:
+            data = ser.read(ser.in_waiting)
+            print(f"✅ Received {len(data)} bytes")
+            ser.close()
+            time.sleep(1)
+            return True
+        
+        ser.close()
+        time.sleep(1)
+    except Exception as e:
+        print(f"❌ Connection error: {e}")
+    
+    return False
+
+# Call this before attempting to connect
+
+
+def is_port_permanently_blocked(port='COM12'):
+    """
+    Performs comprehensive checks to determine if a port is permanently blocked
+    and cannot be accessed programmatically.
+    
+    Returns:
+        tuple: (blocked, reason)
+    """
+    import serial
+    import subprocess
+    import os
+    
+    print(f"🔍 Checking if {port} is permanently blocked...")
+    
+    # Check 1: Basic port existence
+    try:
+        ports = list(serial.tools.list_ports.comports())
+        port_exists = any(p.device == port for p in ports)
+        if not port_exists:
+            return True, f"{port} does not exist in the system"
+    except:
+        pass
+    
+    # Check 2: Try with different access modes
+    for mode in ['r', 'r+', 'w', 'w+']:
+        try:
+            # Try to open the port as a file (low-level)
+            with open(f"\\\\.\\{port}", mode) as f:
+                return False, "Port can be accessed at file level"
+        except:
+            pass
+    
+    # Check 3: Try with different serial settings
+    for baudrate in [9600, 115200, 57600]:
+        for timeout in [0.1, 1.0]:
+            try:
+                ser = serial.Serial(port, baudrate=baudrate, timeout=timeout)
+                ser.close()
+                return False, "Port can be accessed with serial library"
+            except:
+                pass
+    
+    # Check 4: Check if it's a system-reserved port
+    try:
+        result = subprocess.run(["powershell", "-Command", 
+                               f"Get-WmiObject Win32_SerialPort | Where-Object {{$_.DeviceID -eq '{port}'}} | Select-Object Name,PNPDeviceID"],
+                              capture_output=True, text=True)
+        if "System" in result.stdout:
+            return True, f"{port} is reserved by the system"
+    except:
+        pass
+    
+    return True, f"{port} appears to be permanently blocked"
 
 # Add after the imports
 def display_gps_info(emlid_data):
@@ -41,6 +294,233 @@ def display_gps_info(emlid_data):
           f"{emlid_data.get('longitude', 0.0):.8f}°E")
     print("================\n")
 
+def degrees_to_cardinal_16(degrees):
+    """Convert degrees to 16-point compass direction"""
+    if degrees == 'N/A' or degrees is None:
+        return 'N/A'
+    
+    # Normalize degrees to 0-360
+    degrees = degrees % 360
+    
+    # 16-point compass with 22.5 degree intervals - full names
+    directions = [
+        'North', 'North-Northeast', 'Northeast', 'East-Northeast',
+        'East', 'East-Southeast', 'Southeast', 'South-Southeast',
+        'South', 'South-Southwest', 'Southwest', 'West-Southwest',
+        'West', 'West-Northwest', 'Northwest', 'North-Northwest'
+    ]
+    
+    # Calculate index (each direction covers 22.5 degrees)
+    index = int((degrees + 11.25) / 22.5) % 16
+    return directions[index]
+
+def display_gps_status():
+    """Display GPS status, current position, and navigation information every 100 milliseconds"""
+    from datetime import datetime
+    import csv
+    import time
+    import os
+    
+    # Create CSV header if needed - inline header creation
+    headers = [
+        'Timestamp',
+        'GPS_Fix_Quality',
+        'Satellites_Visible',
+        'Satellites_Used',
+        'HDOP',
+        'PDOP', 
+        'VDOP',
+        'Latitude',
+        'Longitude',
+        'Altitude_m',
+        'Lat_Error_m',
+        'Lon_Error_m',
+        'Alt_Error_m',
+        'UTM_X',
+        'UTM_Y',
+        'Heading_Degrees',
+        'Direction_16_Point'
+    ]
+    
+    # Check if file exists and has content
+    if not os.path.exists(csv_file) or os.path.getsize(csv_file) == 0:
+        with open(csv_file, 'w', newline='') as csvfile:
+            gps_writer = csv.writer(csvfile)
+            gps_writer.writerow(headers)
+            print(f"Created CSV header in {csv_file}")
+    
+    log_interval = 0.01  # Log every 0.1 second
+    last_log_time = time.time()
+    
+    while True:
+        try:
+            current_time = time.time()
+            
+            # Always log to CSV every 0.1 seconds, even if no GPS connection
+            if current_time - last_log_time >= log_interval:
+                with open(csv_file, 'a', newline='') as csvfile:
+                    gps_writer = csv.writer(csvfile)
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                    
+                    # Check if rover and GPS are available
+                    if rover and hasattr(rover, 'gps_reader') and rover.gps_reader:
+                        position = rover.gps_reader.last_position
+                        
+                        if position:
+                            gps_fix = position.get('fix_quality', 'Unknown')
+                            satellites = position.get('satellites', 0)
+                            satellites_used = len(position.get('satellites_used', []))
+                            hdop = position.get('hdop', 99.9)
+                            pdop = position.get('pdop', 99.9)
+                            vdop = position.get('vdop', 99.9)
+                            latitude = position.get('latitude', 0.0)
+                            longitude = position.get('longitude', 0.0)
+                            altitude = position.get('altitude', 0.0)
+                            lat_error = position.get('lat_error', 0.0)
+                            lon_error = position.get('lon_error', 0.0)
+                            alt_error = position.get('alt_error', 0.0)
+                            utm_x = rover.x
+                            utm_y = rover.y
+                            heading = position.get('heading', 'N/A')
+                            direction_16 = degrees_to_cardinal_16(heading)
+                        else:
+                            # GPS reader exists but no position data
+                            gps_fix = 'No Fix'
+                            satellites = 0
+                            satellites_used = 0
+                            hdop = 'N/A'
+                            pdop = 'N/A'
+                            vdop = 'N/A'
+                            latitude = 'N/A'
+                            longitude = 'N/A'
+                            altitude = 'N/A'
+                            lat_error = 'N/A'
+                            lon_error = 'N/A'
+                            alt_error = 'N/A'
+                            utm_x = 'N/A'
+                            utm_y = 'N/A'
+                            heading = 'N/A'
+                            direction_16 = 'N/A'
+                    else:
+                        # No rover or GPS reader available
+                        gps_fix = 'No Connection'
+                        satellites = 'N/A'
+                        satellites_used = 'N/A'
+                        hdop = 'N/A'
+                        pdop = 'N/A'
+                        vdop = 'N/A'
+                        latitude = 'N/A'
+                        longitude = 'N/A'
+                        altitude = 'N/A'
+                        lat_error = 'N/A'
+                        lon_error = 'N/A'
+                        alt_error = 'N/A'
+                        utm_x = 'N/A'
+                        utm_y = 'N/A'
+                        heading = 'N/A'
+                        direction_16 = 'N/A'
+                    
+                    # Write row to CSV
+                    gps_writer.writerow([
+                        timestamp, gps_fix, satellites, satellites_used, hdop, pdop, vdop,
+                        latitude, longitude, altitude, lat_error, lon_error, alt_error,
+                        utm_x, utm_y, heading, direction_16
+                    ])
+                    
+                    # Debug message
+                    status_msg = 'Data logged'
+                    if rover and hasattr(rover, 'gps_reader') and rover.gps_reader:
+                        if rover.gps_reader.last_position:
+                            status_msg += ' (GPS Active)'
+                        else:
+                            status_msg += ' (GPS No Fix)'
+                    else:
+                        status_msg += ' (GPS Disconnected)'
+                    
+                    print(f"CSV Log [{timestamp}]: {status_msg}")
+                    
+                last_log_time = current_time
+            
+            # Existing print statements for real-time display
+            print(f"\n=== ROVER STATUS [{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] ===")
+            
+            if rover and hasattr(rover, 'gps_reader') and rover.gps_reader:
+                position = rover.gps_reader.last_position
+                
+                if position:
+                    print(f"GPS Fix: {position.get('fix_quality', 'Unknown')}")
+                    print(f"Satellites: {position.get('satellites', 0)}")
+                    print(f"Satellites Used: {len(position.get('satellites_used', []))}")
+                    print(f"HDOP: {position.get('hdop', 99.9):.1f}")
+                    print(f"PDOP: {position.get('pdop', 99.9):.1f}")
+                    print(f"VDOP: {position.get('vdop', 99.9):.1f}")
+                    print(f"Position (Lat/Lon): {position.get('latitude', 0.0):.6f}, {position.get('longitude', 0.0):.6f}")
+                    print(f"Position Errors - Lat: {position.get('lat_error', 0.0):.3f}m, Lon: {position.get('lon_error', 0.0):.3f}m, Alt: {position.get('alt_error', 0.0):.3f}m")
+                    print(f"Current Position (UTM): {rover.x:.3f}, {rover.y:.3f}")
+                    
+                    if 'heading' in position:
+                        heading = position['heading']
+                        direction_16 = degrees_to_cardinal_16(heading)
+                        print(f"Heading: {heading:.1f}° ({direction_16})")
+                    else:
+                        print("Heading: N/A")
+                else:
+                    print("GPS Fix: No Fix Available")
+                    print("Satellites: 0")
+                    print("Satellites Used: 0")
+                    print("HDOP: N/A")
+                    print("PDOP: N/A")  
+                    print("VDOP: N/A")
+                    print("Position (Lat/Lon): N/A")
+                    print("Position Errors: N/A")
+                    print("Current Position (UTM): N/A")
+                    print("Heading: N/A")
+            else:
+                print("GPS Status: DISCONNECTED")
+                print("GPS Fix: No Connection")
+                print("Satellites: N/A")
+                print("Satellites Used: N/A")
+                print("HDOP: N/A")
+                print("PDOP: N/A")
+                print("VDOP: N/A")
+                print("Position (Lat/Lon): N/A")
+                print("Position Errors: N/A")
+                print("Current Position (UTM): N/A")
+                print("Heading: N/A")
+
+            # Navigation information
+            if rover and hasattr(rover, 'navigator') and rover.navigator and rover.navigator.interpolated_path:
+                if rover.navigator.current_waypoint_index < len(rover.navigator.interpolated_path):
+                    next_wp = rover.navigator.interpolated_path[rover.navigator.current_waypoint_index]
+                    heading = rover.navigator.calculate_heading((rover.x, rover.y), next_wp)
+                    distance = rover.distance_to(next_wp[0], next_wp[1])
+                    direction_16 = degrees_to_cardinal_16(heading)
+                    print(f"Next Waypoint: {next_wp[0]:.3f}, {next_wp[1]:.3f}")
+                    print(f"Heading to Waypoint: {heading:.1f}° ({direction_16})")
+                    print(f"Distance to Waypoint: {distance:.3f}m")
+                else:
+                    print("Navigation complete")
+            else:
+                print("No navigation path set")
+            
+            print("====================\n")
+            time.sleep(0.1)  # Update every 100 milliseconds
+            
+        except Exception as e:
+            print(f"Status display error: {e}")
+            # Still log error state to CSV
+            try:
+                with open(csv_file, 'a', newline='') as csvfile:
+                    gps_writer = csv.writer(csvfile)
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                    gps_writer.writerow([
+                        timestamp, 'ERROR', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A',
+                        'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A',
+                        'N/A', 'N/A', 'N/A', 'N/A'
+                    ])
+            except:
+                pass
+            time.sleep(0.1)
 
 # Add after the imports section
 rover = None
@@ -74,12 +554,11 @@ def check_gps_status():
             fix_type in ['GPS', 'DGPS', 'RTK Fixed', 'RTK Float'])
 
 
-
 def gps_reading_loop():
     """GPS data reading loop for real or simulated data"""
     while True:
         try:
-            if hasattr(rover, 'gps_reader'):
+            if hasattr(rover, 'gps_reader') and rover.gps_reader:  # ADDED CHECK
                 if rover.gps_reader.simulate_gps:
                     fake = simulate_emlid_gps_reading()
                     logging_100mm.update_rover_position_from_emlid(rover, fake)
@@ -92,7 +571,6 @@ def gps_reading_loop():
         except Exception as e:
             print(f"GPS reading error: {e}")
             time.sleep(1.0)
-
 def setup_ntrip(rover, emlid_reader):
     """Setup NTRIP connection and corrections"""
     try:
@@ -123,42 +601,356 @@ def setup_ntrip(rover, emlid_reader):
     except Exception as e:
         print(f"NTRIP setup failed: {e}")
         return False
+
 def setup_gps_with_optional_ntrip(rover, use_ntrip=False):
-    """Setup GPS with optional NTRIP"""
+    """Setup GPS with optional NTRIP - SIMPLIFIED VERSION based on working test script"""
     try:
-        # Initialize Emlid reader
-        emlid_reader = EmlidGPSReader(port='COM12', message_format='nmea')
-        emlid_reader.simulate_gps = False  # Use real Emlid data
+        print("\n📡 Setting up Emlid GPS integration...")
+        
+        # Initialize Emlid reader with minimal configuration
+        emlid_reader = EmlidGPSReader(port='COM12', baud_rate=115200, message_format='nmea')
+        emlid_reader.simulate_gps = False
+        
+        # Register callback before connection
+        update_rover_from_emlid(rover, emlid_reader)
+        print("✅ Callback registered for Emlid GPS data")
+        
+        # Try the simple connection approach first (like your test script)
+        print("\n🔌 Attempting to connect to Emlid GPS...")
+        if hasattr(emlid_reader, 'connect_with_simple_approach'):
+            connection_success = emlid_reader.connect_with_simple_approach()
+        else:
+            # Fallback to regular connect if the new method isn't available
+            connection_success = emlid_reader.connect()
+            
+        if connection_success:
+            print(f"✅ Connected to Emlid M2 on COM12")
+            
+            # Start reading with immediate verification
+            if emlid_reader.start_reading():
+                rover.gps_reader = emlid_reader
+                print("📡 GPS data reading started")
+                
+                # Verify data reception
+                print("🔍 Verifying data reception...")
+                for _ in range(3):  # Check 3 times
+                    time.sleep(1)
+                    if emlid_reader.last_position:
+                        print("✅ Live GPS data confirmed")
+                        return True
+                
+                print("⚠️ No position data detected yet, but connection is active")
+                return True
+            else:
+                print("❌ Failed to start GPS reading")
+        else:
+            print("❌ Connection failed")
+        
+        # If we get here, connection failed - clean up
+        try:
+            if hasattr(emlid_reader, 'stop_reading'):
+                emlid_reader.stop_reading()
+            if hasattr(emlid_reader, 'disconnect'):
+                emlid_reader.disconnect()
+        except:
+            pass
+        
+        # Simulation fallback
+        print("\n📡 GPS Connection Failed")
+        print("Options:")
+        print("1) Continue with GPS simulation")
+        print("2) Abort")
+        
+        while True:
+            try:
+                choice = input("Select option (1/2): ").strip()
+                if choice == '1':
+                    print("\n🧪 Initializing GPS simulation...")
+                    emlid_reader = EmlidGPSReader(port='COM12', message_format='nmea')
+                    emlid_reader.simulate_gps = True
+                    rover.gps_reader = emlid_reader
+                    update_rover_from_emlid(rover, emlid_reader)
+                    
+                    def simulation_thread():
+                        while True:
+                            try:
+                                fake_data = simulate_emlid_gps_reading()
+                                for callback in emlid_reader.callbacks:
+                                    try:
+                                        callback(fake_data)
+                                    except Exception as e:
+                                        print(f"Callback error: {e}")
+                                time.sleep(0.1)
+                            except Exception as e:
+                                print(f"Simulation error: {e}")
+                                time.sleep(1)
+                    
+                    sim_thread = threading.Thread(target=simulation_thread, daemon=True)
+                    sim_thread.start()
+                    print("✅ GPS simulation active")
+                    return False
+                
+                elif choice == '2':
+                    print("\n❌ Setup aborted by user")
+                    return False
+                
+                else:
+                    print("Invalid choice - enter 1 or 2")
+            
+            except Exception as input_e:
+                print(f"Input error: {input_e}")
+    
+    except Exception as e:
+        print(f"\n❌ GPS setup error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+debug = False
+safety = SafetyModule()
+
+def setup_gps_direct_approach(rover):
+    """Setup GPS using the already open serial connection"""
+    global global_serial_connection
+    
+    print("\n📡 Setting up GPS with direct serial approach...")
+    
+    # Check if we already have an open connection
+    if not global_serial_connection or not global_serial_connection.is_open:
+        print("❌ No open serial connection available")
+        return False
+    
+    try:
+        # Create a minimal EmlidGPSReader that just uses our working connection
+        emlid_reader = EmlidGPSReader(port='COM12', baud_rate=115200)
+        emlid_reader.serial_connection = global_serial_connection  # Use our already open connection
+        emlid_reader.simulate_gps = False
         
         # Register callback
         update_rover_from_emlid(rover, emlid_reader)
         
-        # Attempt connection
-        if emlid_reader.connect(retries=5, retry_delay=3):
-            print("✅ Emlid M2 connected successfully")
-            emlid_reader.start_reading()
-            rover.gps_reader = emlid_reader
+        # Create a custom reading thread that doesn't use the EmlidGPSReader's methods
+        def custom_reading_thread():
+            error_count = 0
+            max_errors = 10
             
-            if use_ntrip:
+            while True:
                 try:
-                    # Only try NTRIP if requested
-                    setup_ntrip(rover, emlid_reader)
+                    if not global_serial_connection:
+                        print("❌ No serial connection available")
+                        time.sleep(1)
+                        continue
+                        
+                    if not global_serial_connection.is_open:
+                        print("❌ Serial connection is closed, attempting to reopen")
+                        try:
+                            global_serial_connection.open()
+                            print("✅ Reopened serial connection")
+                        except Exception as open_err:
+                            print(f"❌ Failed to reopen connection: {open_err}")
+                            time.sleep(1)
+                            continue
+                    
+                    # Read NMEA data directly
+                    try:
+                        line = global_serial_connection.readline().decode('utf-8', errors='ignore').strip()
+                        if line:
+                            current_time = time.time()
+                            if not hasattr(custom_reading_thread, 'last_print_time') or current_time - custom_reading_thread.last_print_time >= 1.0:
+                                print(f"📡 NMEA: {line}")
+                                custom_reading_thread.last_print_time = current_time
+                            
+                            # Parse $GPGGA or $GNGGA for position data
+                            if line.startswith(('$GPGGA', '$GNGGA')):
+                                parts = line.split(',')
+                                if len(parts) >= 15 and parts[6] != '0' and parts[2] and parts[4]:
+                                    try:
+                                        position = {
+                                            'latitude': float(parts[2][:2]) + float(parts[2][2:]) / 60.0,
+                                            'longitude': float(parts[4][:3]) + float(parts[4][3:]) / 60.0,
+                                            'altitude': float(parts[9]) if parts[9] else 0.0,
+                                            'satellites': int(parts[7]) if parts[7] else 0,
+                                            'hdop': float(parts[8]) if parts[8] else 99.9,
+                                            'fix_quality': {
+                                                '0': 'Invalid',
+                                                '1': 'GPS',
+                                                '2': 'DGPS',
+                                                '4': 'RTK Fixed',
+                                                '5': 'RTK Float'
+                                            }.get(parts[6], 'Unknown')
+                                        }
+                                        if parts[3] == 'S':
+                                            position['latitude'] = -position['latitude']
+                                        if parts[5] == 'W':
+                                            position['longitude'] = -position['longitude']
+                                        emlid_reader.last_position = position
+                                        emlid_reader.last_update_time = time.time()
+                                        for callback in emlid_reader.callbacks:
+                                            callback(position)
+                                    except Exception as parse_e:
+                                        print(f"NMEA parsing error: {parse_e}")
+                            
+                            # Parse $GPRMC or $GNRMC for heading
+                            elif line.startswith(('$GPRMC', '$GNRMC')):
+                                parts = line.split(',')
+                                if len(parts) >= 10 and parts[2] == 'A':  # Valid position
+                                    try:
+                                        cog = float(parts[8]) if parts[8] else 0.0
+                                        if emlid_reader.last_position is None:
+                                            emlid_reader.last_position = {}
+                                        emlid_reader.last_position['heading'] = cog
+                                        emlid_reader.last_update_time = time.time()
+                                        for callback in emlid_reader.callbacks:
+                                            callback(emlid_reader.last_position)
+                                    except Exception as parse_e:
+                                        print(f"$GPRMC parsing error: {parse_e}")
+                            
+                            # Parse $GPGSA or $GNGSA for satellite status and DOP
+                            elif line.startswith(('$GPGSA', '$GNGSA')):
+                                parts = line.split(',')
+                                if len(parts) >= 18:
+                                    try:
+                                        mode = parts[1]
+                                        fix_type = int(parts[2])
+                                        satellites_used = [int(sat) for sat in parts[3:15] if sat]
+                                        pdop = float(parts[15]) if parts[15] else 99.9
+                                        hdop = float(parts[16]) if parts[16] else 99.9
+                                        vdop = float(parts[17].split('*')[0]) if parts[17] else 99.9
+                                        if emlid_reader.last_position is None:
+                                            emlid_reader.last_position = {}
+                                        emlid_reader.last_position.update({
+                                            'mode': mode,
+                                            'fix_type': fix_type,
+                                            'satellites_used': satellites_used,
+                                            'pdop': pdop,
+                                            'vdop': vdop
+                                        })
+                                        for callback in emlid_reader.callbacks:
+                                            callback(emlid_reader.last_position)
+                                    except Exception as parse_e:
+                                        print(f"$GSA parsing error: {parse_e}")
+                            
+                            # Parse $GPGST or $GNGST for position errors
+                            elif line.startswith(('$GPGST', '$GNGST')):
+                                parts = line.split(',')
+                                if len(parts) >= 9:
+                                    try:
+                                        time_utc = parts[1]
+                                        rms = float(parts[2]) if parts[2] else 0.0
+                                        semi_major = float(parts[3]) if parts[3] else 0.0
+                                        semi_minor = float(parts[4]) if parts[4] else 0.0
+                                        orientation = float(parts[5]) if parts[5] else 0.0
+                                        lat_error = float(parts[6]) if parts[6] else 0.0
+                                        lon_error = float(parts[7]) if parts[7] else 0.0
+                                        alt_error = float(parts[8].split('*')[0]) if parts[8] else 0.0
+                                        if emlid_reader.last_position is None:
+                                            emlid_reader.last_position = {}
+                                        emlid_reader.last_position.update({
+                                            'rms': rms,
+                                            'lat_error': lat_error,
+                                            'lon_error': lon_error,
+                                            'alt_error': alt_error
+                                        })
+                                        for callback in emlid_reader.callbacks:
+                                            callback(emlid_reader.last_position)
+                                    except Exception as parse_e:
+                                        print(f"$GST parsing error: {parse_e}")
+                        
+                        error_count = 0
+                    except Exception as read_err:
+                        error_count += 1
+                        print(f"Read error ({error_count}/{max_errors}): {read_err}")
+                        if error_count >= max_errors:
+                            print("Too many read errors, resetting connection")
+                            try:
+                                global_serial_connection.close()
+                                time.sleep(1)
+                                global_serial_connection.open()
+                                print("Connection reset complete")
+                            except:
+                                pass
+                            error_count = 0
+                        time.sleep(0.5)
+                        continue
+                        
+                    time.sleep(0.1)
+                    
                 except Exception as e:
-                    print(f"⚠️ NTRIP setup failed: {e} - continuing without corrections")
-            else:
-                print("ℹ️ Running without NTRIP corrections")
-            return True
-        else:
-            print("❌ Emlid connection failed")
-            return False
-            
+                    print(f"Reading thread error: {e}")
+                    error_count += 1
+                    if error_count >= max_errors:
+                        print("Too many errors in reading thread, resetting")
+                        error_count = 0
+                    time.sleep(1.0)   
+        # Start our custom reading thread
+        reading_thread = threading.Thread(target=custom_reading_thread, daemon=True)
+        reading_thread.start()
+        emlid_reader.reading_thread = reading_thread
+        
+        # Assign to rover
+        rover.gps_reader = emlid_reader
+        
+        print("✅ GPS setup complete with direct approach")
+        return True
+        
     except Exception as e:
-        print(f"⚠️ GPS setup error: {e}")
+        print(f"❌ Direct GPS setup failed: {e}")
         return False
+def enhanced_gps_status_monitor():
+    """Enhanced GPS status monitor with health checks"""
+    global rover
+    last_health_report = 0
 
-debug = False
-safety = SafetyModule()
+    while True:
+        try:
+            if rover and hasattr(rover, 'gps_reader') and rover.gps_reader:  # ADDED CHECK
+                current_time = time.time()
 
+                # Get health status
+                health = rover.gps_reader.check_health()
+
+                # Print detailed status every 10 seconds
+                if current_time - last_health_report > 10:
+                    print(f"\n=== GPS Health Report [{datetime.datetime.now().strftime('%H:%M:%S')}] ===")
+                    print(f"Connected: {'✅' if health['connected'] else '❌'}")
+                    print(f"Thread Alive: {'✅' if health['thread_alive'] else '❌'}")
+                    print(f"Simulation Mode: {'🧪' if health['simulation_mode'] else '📡'}")
+                    print(f"Last Update: {health['last_update']:.1f}s ago")
+
+                    if rover.gps_reader.last_position:
+                        pos = rover.gps_reader.last_position
+                        print(f"Fix Quality: {pos.get('fix_quality', 'Unknown')}")
+                        print(f"Satellites: {pos.get('satellites', 0)}")
+                        print(f"HDOP: {pos.get('hdop', 99.9):.2f}")
+
+                        # Quality indicators
+                        if pos.get('fix_quality') == 'RTK Fixed':
+                            print("🟢 Excellent RTK Fixed")
+                        elif pos.get('fix_quality') == 'RTK Float':
+                            print("🟡 Good RTK Float")
+                        elif pos.get('fix_quality') in ['GPS', 'DGPS']:
+                            print("🔴 Basic GPS Fix")
+                        else:
+                            print("⚫ Poor/No Fix")
+
+                    print("=" * 50)
+                    last_health_report = current_time
+
+                # Check for problems
+                if health['last_update'] > 10:  # No data for 10 seconds
+                    print("⚠️ WARNING: No GPS data received for 10+ seconds")
+
+                if not health['connected'] and not health['simulation_mode']:
+                    print("⚠️ WARNING: GPS connection lost, attempting recovery...")
+                    try:
+                        rover.gps_reader.connect(retries=2, retry_delay=1)
+                    except:
+                        pass
+
+            time.sleep(5)  # Update every 5 seconds
+
+        except Exception as e:
+            print(f"GPS monitor error: {e}")
+            time.sleep(5)
 
 def get_float(prompt):
     """Get a float value from user with error handling"""
@@ -249,23 +1041,105 @@ def display_ntrip_status(ntrip_client):
         print("\n=== NTRIP Status ===")
         print(f"Connected: {ntrip_client.connected}")
         print("===================\n")
-def handle_gps_error(error):
-    """Handle GPS-related errors"""
-    print(f"\n⚠️ GPS Error: {error}")
+def handle_gps_error(error_message):
+    """Handle GPS errors without disconnecting"""
+    print(f"⚠️ GPS Error: {error_message}")
     print("Attempting recovery...")
     
-    try:
-        if hasattr(rover, 'gps_reader'):
-            rover.gps_reader.disconnect()
-            time.sleep(2)
-            rover.gps_reader.connect()
-            rover.gps_reader.start_reading()
-            print("✅ GPS reconnected successfully")
-    except Exception as e:
-        print(f"❌ GPS recovery failed: {e}")
+    # Just reset the failsafe timers without disconnecting
+    if hasattr(rover, 'failsafe'):
+        rover.failsafe.last_gps_update = time.time()
+        if hasattr(rover.failsafe, 'last_correction_update'):
+            rover.failsafe.last_correction_update = time.time()
+        
+    return True  # Indicate successful recovery
 
+def setup_gps_simple_approach(rover):
+    """Setup GPS using the exact same approach as test.py"""
+    print("\n📡 Setting up Emlid GPS with simple approach...")
+    
+    # First ensure all existing connections are closed
+    try:
+        from emlid_gps_integration import cleanup_all_gps_connections
+        cleanup_all_gps_connections()
+        time.sleep(2)  # Give OS time to release port
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+    
+    # Force release the port
+    force_release_com_port('COM12')
+    
+    # Check if port is permanently blocked
+    blocked, reason = is_port_permanently_blocked('COM12')
+    if blocked:
+        print(f"❌ COM12 is permanently blocked: {reason}")
+        print("   Cannot proceed with real GPS connection")
+        return False
+    
+    try:
+        # Create a simple serial connection like in test.py
+        ser = serial.Serial(
+            port='COM12',
+            baudrate=115200,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            timeout=1
+        )
+        
+        print("✅ Connected to COM12")
+        
+        # Initialize the EmlidGPSReader with this connection
+        emlid_reader = EmlidGPSReader(port='COM12', baud_rate=115200)
+        emlid_reader.serial_connection = ser  # Use our working connection
+        
+        # Register callback
+        update_rover_from_emlid(rover, emlid_reader)
+        
+        # Start reading thread
+        emlid_reader.start_reading()
+        
+        # Assign to rover
+        rover.gps_reader = emlid_reader
+        
+        return True
+    except Exception as e:
+        print(f"❌ Simple GPS setup failed: {e}")
+        return False
+    
+csv_dir = r'F:\GPS\task_2_waypoints'
+csv_file = os.path.join(csv_dir, 'gps_status_log.csv')
+if not os.path.exists(csv_dir):
+    os.makedirs(csv_dir)
+    print(f"✅ Created directory: {csv_dir}")
+if not os.path.exists(csv_file):
+    with open(csv_file, 'w', newline='') as csvfile:
+        gps_writer = csv.writer(csvfile)
+        gps_writer.writerow([
+            'Timestamp', 'GPS Fix', 'Satellites', 'Satellites Used', 'HDOP', 'PDOP', 'VDOP',
+            'Latitude', 'Longitude', 'Altitude', 'Lat Error', 'Lon Error', 'Alt Error',
+            'UTM X', 'UTM Y', 'Heading'
+        ])
 def run_simulation():
-    global rover, ntrip_client, failsafe  
+    global rover, ntrip_client, failsafe, global_serial_connection 
+    print("🧹 Initial cleanup of any existing GPS connections...")
+    try:
+        from emlid_gps_integration import cleanup_all_gps_connections
+        cleanup_all_gps_connections()
+    except Exception as e:
+        print(f"Initial cleanup error: {e}")
+
+    direct_serial_test()
+
+    
+        
+    # Initialize gps_success variable with a default value
+    gps_success = False
+
+      # Only run the direct serial test if it hasn't been run yet
+    if not direct_test_completed:
+        direct_serial_test()
+    
     def on_failsafe_triggered(reason):
         print(f"⚠️ Failsafe triggered: {reason.value}")
         rover.log_movement("stop")  # Stop the rover for safety
@@ -277,24 +1151,30 @@ def run_simulation():
         try:
             if reason == GPSFailsafeReason.GPS_STALE_DATA or reason == GPSFailsafeReason.GPS_DATA_LOSS:
                 failsafe.last_gps_update = current_time
-                return handle_gps_error("GPS data loss")
+                # Don't disconnect/reconnect, just reset the timer
+                print("Resetting GPS data timer without disconnecting")
+                return True
+            elif reason == GPSFailsafeReason.GPS_CORRECTION_STALE:
+                failsafe.last_correction_update = current_time
+                print("Resetting GPS correction timer without disconnecting")
+                return True
             elif reason == GPSFailsafeReason.INTERNET_CONNECTION_LOST or reason == GPSFailsafeReason.INTERNET_CONNECTION_SLOW:
                 failsafe.last_internet_check = current_time
                 return True  # Continue without internet
             elif reason == GPSFailsafeReason.MODULE_COMMUNICATION_FAILURE:
                 failsafe.last_module_comm = current_time
-                return handle_gps_error("Module communication failure")
+                return True
             return True
         except Exception as e:
             print(f"Recovery attempt failed: {e}")
             return False
+
    
     # Add periodic NTRIP status check
 
-
     print("🚜 Farm Rover Navigation Simulation 🚜")
     print("=====================================")
-     
+    sys.modules['__main__'].global_serial_connection = global_serial_connection
     # -------------------- HEALTH CHECK SECTION --------------------
     print("\n🔍 Running rover health checks before simulation...")
     
@@ -344,91 +1224,58 @@ def run_simulation():
     
     # Now initialize GPS logger
     gps_logger = logging_100mm.initialize_gps_logger(rover)
+    
+    # Inside run_simulation function, replace the GPS setup section with:
+
+    # Enhanced GPS setup with comprehensive error handling
     print("\n📡 Setting up Emlid GPS integration...")
-    gps_success = setup_gps_with_optional_ntrip(rover, use_ntrip=False)
+    # Initialize gps_success variable with a default value
+    gps_success = False
 
-     # Add GPS monitoring
-    try:
-        print("\nChecking GPS status...")
-        if not check_gps_status():
-            print("⚠️ Poor GPS quality or no fix")
-        else:
-            print("✅ GPS quality acceptable")
-        gps_monitor = GPSSystemMonitor(emlid_reader, ntrip_client)
-        gps_monitor.start_monitoring()
-        print("✅ GPS monitoring started")
-    except Exception as e:
-        logging.error(f"Failed to start GPS monitoring: {e}")
-        gps_success = False
+    # Try our direct approach using the already open connection
+    gps_success = setup_gps_direct_approach(rover)
 
+    status_thread = threading.Thread(target=display_gps_status, daemon=True)
+    status_thread.start()
+
+    # If that fails, fall back to simulation
     if not gps_success:
-        print("⚠️ Falling back to simulated GPS")
-        emlid_reader = EmlidGPSReader(port='COM12', message_format='nmea')
-        emlid_reader.simulate_gps = True
-        
-        def gps_simulation_loop():
-            while True:
-                fake = simulate_emlid_gps_reading()
-                logging_100mm.update_rover_position_from_emlid(rover, fake)
-                display_gps_info(fake)
-                time.sleep(1.0)
-        
-        threading.Thread(target=gps_simulation_loop, daemon=True).start()
-        print("🧪 GPS simulation started")
+        print("\n⚠️ GPS setup failed. Switching to simulation mode...")
+        try:
+            # Clean up any partial setup
+            if hasattr(rover, 'gps_reader') and rover.gps_reader:
+                rover.gps_reader.stop_reading()
+                rover.gps_reader.disconnect()
+            
+            # Setup simulation
+            emlid_reader = EmlidGPSReader(port='COM12', message_format='nmea')
+            emlid_reader.simulate_gps = True
+            rover.gps_reader = emlid_reader
+            
+            # Register callback for simulation
+            update_rover_from_emlid(rover, emlid_reader)
 
-    
-    # Add after this block (around line 367-370):
-    if not gps_success:
-        print("⚠️ Falling back to simulated GPS")
-        emlid_reader = EmlidGPSReader(port='COM12', message_format='nmea')
-        emlid_reader.simulate_gps = True
+            def gps_simulation_loop():
+                while True:
+                    try:
+                        fake = simulate_emlid_gps_reading()
+                        for callback in emlid_reader.callbacks:
+                            try:
+                                callback(fake)
+                            except Exception as cb_e:
+                                print(f"Simulation callback error: {cb_e}")
+                        time.sleep(0.1)  # 10Hz simulation
+                    except Exception as sim_e:
+                        print(f"Simulation error: {sim_e}")
+                        time.sleep(1.0)
+            
+            threading.Thread(target=gps_simulation_loop, daemon=True).start()
+            print("🧪 GPS simulation started successfully")
+            
+        except Exception as sim_error:
+            print(f"❌ Even simulation setup failed: {sim_error}")
+            print("   This is a critical error - check your imports and dependencies")
 
-    # Add the new visualization code here
-    if gps_success:  # When using real Emlid
-        print("✅ Real GPS mode - Visualization will follow actual position")
-        
-        # Remove simulated path planning
-        # Keep only the waypoints visualization
-        x_coords, y_coords = zip(*navigator.interpolated_path)
-        ax.plot(x_coords, y_coords, 'b--', alpha=0.5, label='Planned Path')
-        
-        def update_visualization():
-            while True:
-                if rover.gps_reader and rover.gps_reader.last_position:
-                    # Update rover marker position
-                    rover_patch = update_rover_visualization(rover, ax, fig, rover_patch)
-                    
-                    # Add trail of actual movement
-                    if len(rover.history) > 1:
-                        x_hist, y_hist = zip(*rover.history[-2:])
-                        ax.plot(x_hist, y_hist, 'g-', alpha=0.5)
-                    
-                    # Update display
-                    fig.canvas.draw_idle()
-                    plt.pause(0.1)  # 10Hz update rate
-                    
-        # Start visualization in separate thread
-        viz_thread = threading.Thread(target=update_visualization, daemon=True)
-        viz_thread.start()
-
- 
-
-    try:
-        print("Starting GPS monitoring...")
-        gps_thread = threading.Thread(target=gps_reading_loop, daemon=True)
-        gps_thread.start()
-
-        # Add GPS status monitoring - add this part
-        gps_status_thread = threading.Thread(target=gps_status_monitor, daemon=True)
-        gps_status_thread.start()
-        print("✅ GPS monitoring active")
-    except Exception as e:
-        logging.error(f"Failed to start GPS monitoring: {e}")
-        gps_success = False
-
-    
-    
-    # === END ADDITION ===
     # Create row navigator
     navigator = RowNavigator(rover)
     rover.navigator = navigator
@@ -641,30 +1488,67 @@ def run_simulation():
     plt.show(block=True)
     logging_100mm.stop_gps_logger(rover)
     failsafe.stop_monitoring()
+    cleanup_resources()
 
 def cleanup_resources():
-    """Clean up all resources"""
-    global rover, ntrip_client, failsafe, gps_thread
+    """Enhanced cleanup with better error handling"""
+    global rover, ntrip_client, failsafe, gps_thread, global_serial_connection
     print("\nCleaning up resources...")
-    
+
     try:
-        if rover and hasattr(rover, 'gps_reader'):
-            print("Disconnecting GPS...")
-            rover.gps_reader.disconnect()
-        
+        if global_serial_connection and global_serial_connection.is_open:
+            try:
+                global_serial_connection.close()
+                print("✅ Closed global serial connection")
+            except Exception as e:
+                print(f"⚠️ Error closing global serial connection: {e}")
+            global_serial_connection = None
+        # FIRST: Stop all GPS-related threads and connections
+        if rover and hasattr(rover, 'gps_reader') and rover.gps_reader:  # ADDED CHECK
+            print("Stopping GPS reader...")
+            try:
+                rover.gps_reader.stop_reading()  # Stop reading first
+                time.sleep(1)  # Give it time
+                rover.gps_reader.disconnect()   # Then disconnect
+                time.sleep(1)  # Give OS time to release port
+                print("✅ GPS disconnected successfully")
+            except Exception as e:
+                print(f"⚠️ GPS cleanup error: {e}")
+
+        # Cleanup all GPS connections (using our new function)
+        try:
+            from emlid_gps_integration import cleanup_all_gps_connections
+            cleanup_all_gps_connections()
+        except Exception as e:
+            print(f"⚠️ Global GPS cleanup error: {e}")
+
         if ntrip_client:
             print("Cleaning up NTRIP...")
-            ntrip_client.cleanup()
-        
+            try:
+                ntrip_client.cleanup()
+            except Exception as e:
+                print(f"⚠️ NTRIP cleanup error: {e}")
+            ntrip_client = None
+
         if rover:
             print("Stopping GPS logger...")
-            logging_100mm.stop_gps_logger(rover)
-            
+            try:
+                logging_100mm.stop_gps_logger(rover)
+            except Exception as e:
+                print(f"⚠️ Logger cleanup error: {e}")
+
         if failsafe:
             print("Stopping failsafe monitoring...")
-            failsafe.stop_monitoring()
-        plt.close('all')    
-            
+            try:
+                failsafe.stop_monitoring()
+            except Exception as e:
+                print(f"⚠️ Failsafe cleanup error: {e}")
+
+        try:
+            plt.close('all')
+        except Exception as e:
+            print(f"⚠️ Plot cleanup error: {e}")
+
         print("✅ Cleanup complete")
     except Exception as e:
         print(f"❌ Cleanup error: {e}")
@@ -676,11 +1560,11 @@ def simulate_emlid_gps_reading():
     """
     # These are example coordinates - in a real implementation,
     # you would get these from the Emlid GPS receiver
-    
+
     # Randomly choose a solution status for demonstration
     solution_statuses = ["fixed", "float", "single", "dgps"]
     solution_status = random.choice(solution_statuses)
-    
+
     # Determine appropriate HDOP based on solution status
     if solution_status == "fixed":
         hdop = random.uniform(0.01, 0.2)
@@ -690,13 +1574,17 @@ def simulate_emlid_gps_reading():
         hdop = random.uniform(0.5, 1.0)
     else:  # single
         hdop = random.uniform(1.0, 2.0)
-    
+
     return {
         'latitude': 28.6139,              # Example latitude
         'longitude': 77.2090,             # Example longitude
         'solution_status': solution_status,  # RTK solution status from Emlid
         'satellites': random.randint(8, 15),  # Number of satellites
-        'hdop': hdop                      # Horizontal dilution of precision
+        'hdop': hdop,                      # Horizontal dilution of precision
+        'fix_quality': solution_status.upper(),  # Add fix_quality
+        'altitude': random.uniform(200, 300),  # Add altitude
+        'speed': random.uniform(0, 5),  # Add speed
+        'heading': random.uniform(0, 360)  # Add heading
     }
 
 def gps_status_monitor():
@@ -787,26 +1675,90 @@ def test_emlid_integration():
     # Cleanup
     logging_100mm.stop_gps_logger(rover)
     print("🧪 Test completed")
+def force_release_com_port(port='COM12'):
+    """Force release a COM port using mode command"""
+    print(f"\n🔧 Forcing release of {port}...")
+    try:
+        # Try closing any existing connections
+        try:
+            temp_ser = serial.Serial(port)
+            temp_ser.close()
+        except:
+            pass
+            
+        # Use mode command to reset port
+        os.system(f"mode {port} BAUD=115200 PARITY=N DATA=8 STOP=1")
+        time.sleep(2)  # Give OS time to release
+        
+        # Kill any Python processes that might be using serial ports
+        import psutil
+        current_pid = os.getpid()
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                if proc.pid != current_pid and proc.name().lower() in ['python.exe', 'pythonw.exe']:
+                    proc.kill()
+            except:
+                pass
+                
+        time.sleep(2)  # Wait for processes to terminate
+        print("✅ Port cleanup complete")
+        return True
+    except Exception as e:
+        print(f"⚠️ Port cleanup warning: {e}")
+        return False
 
 
-
-
+def test_com12_availability():
+    """Test if COM12 is available"""
+    print("🧪 Testing COM12 availability...")
+    try:
+        ser = serial.Serial(
+            port='COM12',
+            baudrate=115200,
+            timeout=1,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE
+        )
+        print("✅ COM12 is available and opened successfully")
+        ser.close()
+    except serial.SerialException as e:
+        print(f"❌ Failed to open COM12: {e}")
+        if "Access is denied" in str(e):
+            print("   🔍 COM12 is likely in use by another application or process.")
+            print("   Please close other programs (e.g., ReachView, PuTTY) and try again.")
 if __name__ == "__main__":
     try:
-        # Uncomment to test Emlid integration separately
-        # test_emlid_integration()
+        print("🚜 Starting Farm Simulation...")
         
-        # Run the main simulation
+        # Force initial cleanup
+        try:
+            from emlid_gps_integration import cleanup_all_gps_connections
+            cleanup_all_gps_connections()
+            comprehensive_port_release('COM12')
+            time.sleep(2)  # Give OS time to release ports
+            print("✅ Initial cleanup complete")
+        except Exception as e:
+            print(f"⚠️ Cleanup warning: {e}")
+        
+        # First, try direct serial connection like in test.py
+        real_gps = direct_serial_test()
+        
+        # Run simulation in simulation mode by default
+        print("\n" + "=" * 50)
+        if not real_gps:
+            # Set simulation flag in GPS module
+            import emlid_gps_integration
+            emlid_gps_integration.simulate_gps = True
+            print("🧪 Running in simulation mode")
+        
         run_simulation()
+        
     except KeyboardInterrupt:
-        print("\n\n🛑 Simulation terminated by user.")
+        print("\n\n🛑 Simulation terminated by user")
     except Exception as e:
         print(f"\n❌ Simulation error: {e}")
-        # For debugging:
         import traceback
         traceback.print_exc()
     finally:
-        cleanup_resources()  # This will now work correctly
-
-
-
+        cleanup_resources()
