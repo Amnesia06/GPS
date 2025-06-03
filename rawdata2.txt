@@ -1,0 +1,4 @@
+f(4)
+return 7 + 2
+return 7 + 0
+return 1

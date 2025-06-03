@@ -1,0 +1,2 @@
+2025-05-05 13:36:36,939 - ERROR - Failed to connect to COM8: could not open port 'COM8': OSError(22, 'The semaphore timeout period has expired.', None, 121)
+2025-05-05 13:39:52,973 - ERROR - Failed to connect to COM8: could not open port 'COM8': OSError(22, 'The semaphore timeout period has expired.', None, 121)

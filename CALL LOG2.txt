@@ -1,0 +1,554 @@
+Context and Overview
+The call log reveals a detailed conversation about setting up and optimizing a GPS system for a rover, likely used in agricultural or surveying applications, given mentions of farms and open spaces. The focus is on using an RTK GPS system with the Emlid Reach M2 device, leveraging NTRIP corrections from the Survey of India CORS network instead of a local base station. Key topics include satellite data retrieval, RTK fix states, accuracy validation, and handling environmental factors, with an emphasis on cost-effective testing before subscribing to NTRIP services.
+
+Detailed Tasks and Implementation
+1. Satellite Data Retrieval and Monitoring
+The conversation highlights the need to retrieve the number of satellites and DOP (Dilution of Precision) values, such as HDOP, VDOP, and PDOP, using specific registers on the device. DOP values indicate the geometric quality of satellite configuration, with lower values suggesting better accuracy. For instance, PDOP values below 3-4 are recommended for RTK surveying to ensure high precision, as supported by guidelines from sources like Natural Resources Canada (Understanding RTK: What is Your GNSS Receiver Telling You?). You need to:
+
+Implement code to read these values from the device, using shared code for latitude, longitude, and HDOP from register 6, as discussed.
+Ensure the code handles real data collection, possibly testing in open spaces to verify functionality, as planned for next week.
+Parameter	Recommended Threshold	Source
+PDOP	< 3-4	Understanding RTK: What is Your GNSS Receiver Telling You?
+HDOP	< 2	General RTK guidelines, to be confirmed with Emlid docs
+VDOP	< 2	General RTK guidelines, to be confirmed with Emlid docs
+2. Achieving and Maintaining RTK Fix
+RTK fix is critical for centimeter-level accuracy, contrasting with RTK float, which offers lower precision. The discussion clarified that RTK fix (type 4 in standard NMEA GGA messages) uses integer values for corrections, providing high reliability, while RTK float (type 5) uses float values, less precise. Factors affecting RTK fix include:
+
+Stable internet for NTRIP corrections, with research suggesting 2G connectivity (50-100 kbps) is sufficient, given NTRIP data usage around 1 MB/hour (Choosing Data plan for LTE Hotspot).
+Satellite visibility and geometry, monitored via DOP values.
+You need to:
+
+Implement checks to ensure the fix type is at least 4 (RTK fix), researching Emlid Reach M2 documentation for exact codes.
+Investigate conditions for transitioning from float to fix, such as internet bandwidth and satellite count, and document findings.
+3. Validating GPS Accuracy
+Accuracy validation is crucial, especially given the cost of NTRIP subscriptions (6,000 rupees/month). The boss suggested testing by placing the rover next to known landmarks, like a pole, and comparing reported positions. This involves:
+
+Setting up tests in open spaces, possibly next week, to collect data without NTRIP initially, then with corrections, to ensure readiness.
+Comparing GPS-reported WGS84 coordinates to known coordinates, transforming if necessary to local projections like UTM zone 45N (EPSG 32645) for India, as mentioned.
+You should plan these tests carefully, ensuring clear sky view and documenting results to validate centimeter-level accuracy claims.
+
+4. Implementing Health Checks
+Various checks are necessary to ensure system reliability:
+
+Signal Strength: Ensure SNR is above 25 dB-Hz, as suggested, researching and documenting the source, possibly from Emlid docs or online resources.
+Position Validity: Check for GPS glitches like Null Island (0,0 coordinates), ensuring positions are within valid ranges (latitude -90 to 90, longitude -180 to 180).
+Internet Connectivity: Verify active connection and speed, with research indicating 2G is sufficient for NTRIP, given low bandwidth needs.
+Age of Corrections: Monitor differential corrections, aiming for updates within 100 ms, not 1 second, as discussed, by checking NTRIP service data rates from Survey of India CORS (Survey of India CORS Portal).
+Multipath Detection: Identify signal reflections, possibly using SNR logs, and mitigate by ensuring a 30-degree clear sky view, as recommended for Emlid devices.
+Environmental Interference: Research solar activity impacts, such as ionospheric disturbances during midday, and plan operations accordingly, using space weather forecasts (Solar Activity & (RTK)GNSS Impact).
+5. Research and Documentation
+Documentation is critical for future reference. You need to:
+
+Research thresholds like DOP values, signal strength, and fix types, citing sources such as Emlid docs, Survey of India CORS, and online resources.
+Document page numbers or URLs, ensuring easy access, as the boss emphasized for future troubleshooting.
+6. Adjusting for NTRIP Usage
+Since a local base station is not used, configure the system for NTRIP corrections:
+
+Update checks to monitor NTRIP connection and data reception, ensuring internet bandwidth (researched as sufficient with 2G).
+Verify with Survey of India CORS documentation for subscription details and data formats, ensuring compatibility with Emlid Reach M2.
+7. Coordinate System Configuration
+The discussion mentioned WGS84 as standard, with possible use of WGS45 (likely a typo for a local datum). For India, use WGS84, transforming to UTM zone 45N (EPSG 32645) if needed for mapping. Ensure the device outputs in WGS84 and handle transformations in software.
+
+Practical Considerations
+Test in open spaces next week, possibly sharing screens with the boss to demonstrate functionality.
+Prioritize research on critical areas like RTK fix conditions and NTRIP bandwidth, updating the boss on progress and roadblocks.
+Ensure all failsafe actions are based on error criticality, such as stopping the rover for high HDOP (>5) and attempting recovery by rechecking satellite data.
+This comprehensive approach ensures the system is robust, cost-effective, and ready for deployment, aligning with the discussion's goals.
+
+Key Citations
+
+
+
+
+
+
+
+So the number of satellites you get. Okay. So there are different registers based on which you can get the, number of satellites that are getting recorded. Do you have those registers? No.
+
+No. No. Okay. One second. Yeah.
+
+I'm embedding you this. Yes, sir. Okay. I will you will get it in a minute. So from that, you will be able to, get the number of satellites that are, getting recorded.
+
+Right? Then and STOP. STOP measures the geometric quality of satellite configuration for horizontal What is this? Which one, sir? HDUP.
+
+What does that mean in layman terms? Wait. Let me just check. I get the full form, but what does it mean and how much relevant is it? It's it's like, it's just to check if your, the GPS satellites in a sense that, how do I say?
+
+Like, it just checks the accuracy of the your satellite if it's been positioned properly or not. Like, there's there's there's a there's a threshold that example, if it cross IVs below, four, then the GPS signal is like that on that. I mean, the the satellite. So Okay. So something like that.
+
+Like yeah. It's just a thing to measure how It is a quali it is a qualitative aspect, if I understand right. So if you are getting data, you're getting good, data, but, for some reason, if you find that the HDOP value is too high, then the quality of data is basically bad. Right? Yeah.
+
+Is it right to consume? Yeah. That way? And therefore, it is relevant to for us. Yeah.
+
+Am I right? Yes. So, my, purpose of asking is whether this is relevant, or we are just connecting it for the sake of it because that'd be bigger somewhere in the on the Internet, it was not deleted. No, sir. I think it's relevant.
+
+It's relevant. Okay. Just hold on for a sec. Yes. Let's continue.
+
+So, the emulate, device, register number six gives us that HDOP data. It's a 32 bit. So we get that. It also gives video feed. Yeah.
+
+So I'm understanding that SDOP, VideoP, you need to drag all of this. Right? Yes. So in your phone, have you, incorporated all of this? Yes.
+
+I have I just have to improve. Can you? Yeah. Can can you email me the code? Okay.
+
+Yeah. No problem. You can turn off your videos. That will save on the bandwidth. Sir, can I just send to WhatsApp right in my ex?
+
+Yeah. Everything is fine. Sorry? It's Hassan Jusen. Oh, okay.
+
+Once again, I'm taking it on my, laptop. Okay, sir. By the way, did any of the codes on the GitHub, help you by any chance? I used yeah. Some some of it, especially the this, the RTK RTK part.
+
+Right? So for the real time real time connectives, I I I use some of the. What is RTPA, code as in the the correction part? Yeah. Yeah.
+
+The twelve ten. Okay. Yeah. Yes. I mean, there's still some Fifteen Thirteen hundred, 15 hundred bytes.
+
+So Yeah. There's still some improvement of bugs I have to fix, but I can't wait to them in. Sorry? I didn't understand. I still have to fix a bit some some of the lines.
+
+Some bugs I have created. Yeah. But Yeah. That's right. Yeah.
+
+Okay. Wherever we, the HQ will be fine. So in the document I was, going through, at the very end, you, put a table which is summary of failsafe figures and action. Right? Yes.
+
+Over there, I was trying to see if there is anything with respect to SDOP. K. So, there is one, condition which you mentioned, high DoP. So HDOP more than five, HDOP more than seven, and PDOP more than seven. In that case, what you will do is you'll stop, stop the rover and attempt recovery.
+
+K. No. You have mentioned that. So I was just I wanted to know what exactly does it mean. You mean the this edge The rover will stop acting, will stop moving, and it will attempt to recover.
+
+Oh. Right? Yeah. Sir, one by the way, one question. This the when you mean, sleep mode and all, does does does it mean that I have to, technically stop the rover or just have to, you know, give, like, give a command a message or notification to the other system, like the control monitor?
+
+Yeah. You have to give, you have to publish a message to the navigation system saying stop. K. Stop moving forward. So the navigation system has to stop, actually.
+
+K. So it's not me. I just I mean, it's not the me, like, stopping navigation code to stop. You only have to publish same stop. K.
+
+Adeshit? Yeah. Yeah. So with respect to navigation, or controlling the quotas, you don't have to write the code. You just have to publish what action that code has to take.
+
+Okay. So that navigation code will basically subscribe to your code and, get whatever action has to be taken. And, based on that, it will move. Move or stop or whatever. Okay, sir.
+
+So, but The navigation code in itself is a dumb code. It will do whatever is called it to do. And, the GPS code will be an intelligent code, which has to do all the analytics. Navigation module should do. So it will just give instructions, publish instructions to the navigation module.
+
+Do this, do that, go straight, go move forward right, move forward left, take a 180 degree turn, whatever it is. Yes, sir. Okay. Understood? Yeah.
+
+Yeah. Understood. And, about that, SDOP and PDoP and VDoP, basically, it's all about, like, how the satellite geometry, like, it's, it's aligned with here. So, in the code, that attempt recovery means, like, it tries to, you know, check it multiple times. So like, is the is the connection good, like, in terms of the satellite geometry.
+
+So it keeps on calling calling. It's it's that is the attempt recovery part. So Correct. Yeah. So it So attempt recovery, is a action that, the system is taking.
+
+Yeah. It will show you. In that case, I think yeah. So in that case, what it should be doing or what, you're trying to do basically is it will keep on trying to collect data of, whatever the DOP is and try keep on doing it until it comes down below the thresholds. Right?
+
+Yes. Yes. Once it comes below the threshold, only then the data becomes reliable and you can start working. Right? Yes, sir.
+
+This is significant. Right? Yes, sir. I haven't done any research on this, so I'm relying on you. Yes, sir.
+
+So if you have some document or some kind of information on the Internet, if you get it, please, download that and, document its relevance. So you don't have to write anything, but just download all the information and, keep a short summarized piece of how relevant it is and what will happen if the DOP levels are high beyond the thresholds. So say, for example, HDOP you've mentioned more than five. What if it is 5.5? And what if it is 10?
+
+There would be I'm sure it won't be linear, the impact. Yes. And what happens if it is 4.5? So three cases, would be quite different. So 4.5, five point five, and 10 for HDOP.
+
+What is the significance of these values is something we should know because what will happen is satellites are beyond our control. Right? Yes. We can't control the satellite. And if a third party is controlling those satellites, so what happens from limited knowledge that I have, these satellites are on auto navigation mode.
+
+Okay. Whenever their orbit changes or there is some, some change, in the in their positioning, they are either, brought back to their desired position automatically through the, navigation system that is there in it, dot and our sanitation, or they are manually maneuver. So if somebody has manually maneuver that satellite, the company, whichever has released that satellite, they have manually done that For some reason, and we are expecting that it would come back to its position. It won't because manually, it has been taken to some other position. So what are we going to do because of it?
+
+And say, for example, if there are 60 satellites, and out of that, only five are five show higher HDOP, and, 55 show less than, threshold HDOP. In that case, what do you do? Correct? Are you getting me? Yes.
+
+Yes. Not all satellites would, disorient from that position. Am I right? Yes, sir. So we just have to consider this situation and also factor for it.
+
+In the port, can you point me to a particular line where we have dealt with SDOP? Okay. Just give me one moment. Yeah. In line one hundred and forty three and one hundred and forty four, you know, I have declared the threshold for the HDOP Okay.
+
+HDOP and v VOP. And then Got it. Yeah. And then, if HDOP is, we check if it is provided or not, we can and there is another case, and then it triggers in that line ten sixty again. Yeah.
+
+It, it calls this trigger failsafe, so it just it just checks. This is just a test simulation, so for now, since we are not getting since you cannot get the, data from the Understood. Yeah. So whether So see, what I plan to do is, I I can take this, this, module, in the in an open space and try to see how it works, whether we are getting all of these data points and all. And whether, the entry is required to collect all of this data also.
+
+I I know for a fact that without entry, the precision would be low. Yes. We will not be able to get that correction values. But I think that is fine, without the correction values whether we are able to get out of this data and whether the rest of the thing works. Let us just try and see.
+
+Correct? Yes. Because that is and it is, very costly. It costs around 6,000 rupees a month. Yes.
+
+Yes, sir. So, before I buy that subscription, I want to just test this whether, basically, the our person is we should be ready with everything, and then I buy the subscription so it does not get go waste. Yes. Yeah. So, I see on, line one zero five nine, you've done this, check code to see what the threshold is, and trigger fail safe.
+
+This is fine, but then there has to be some condition for triggering the failsafe. Like I told you that, right now you are assuming there is only one satellite, but we won't be getting access to multiple satellites. In that case, what happens? Yes. Okay?
+
+Yeah. Just imagine what more. And, check with chat GPT. What what more should be added in terms of, triggering the failsafe for SDOT. So like I told you, one of the factors is how many number of satellites.
+
+There could be something more also. I am not sure, but, I just get a hunch that, not all satellites are relevant. There are certain satellites which are more relevant than others. Will you just do a small research? Okay.
+
+Like, whether all satellites are relevant and whether, satellites are relevant And does it make sense to give weightage to the satellites? So for example, if certain satellites are very critical, then we maybe give them higher weightage. On the data that we are receiving from them, they get higher weightage. Yes. Right?
+
+Yes. Make sense? Yes, sir. Yeah. Okay.
+
+Cool. So similarly for video p video b. Right? Yes, sir. Because the logic remains same.
+
+Now I've given you the register also for, getting the HDOP data. So you'll incorporate that as well. Sir, about that one, I'm a bit confused. You you mean, what what do I what do what technique will do I have to do? Do?
+
+You mean I have to, you know, incorporate this in my code? So, I have, shared one data one code with you. Right? Yes. Yes.
+
+Where you can collect the data from this module? You mean this, registered address, description, and all? How do you so basically, I I'm just trying to recall if I had, shared a code with you based on which using which you can collect, the data from the m lead bridge to module. Oh, I don't think you're sharing this stuff. Is it?
+
+One second. Can I email you, this one? Ron? Yes, sir. Should I email you this call?
+
+Yes, sir. Yes. Is the email accessible to you, or should I WhatsApp it? You can email me, sir. Okay.
+
+See, I just emailed you. Did you get my earlier email of the registers? Yes. So, sir, can you kindly brief again, what does this thing do, this code you send me? Yeah.
+
+One second. So, basically, this code I was using to get the latitude and longitude. Okay? Okay. So, if you see the registers, register for latitude is two and for longitude is three.
+
+Yes. So 2 3, I was using basically to read the latitude and longitude. Okay. You have to do nothing but just, so the device basically reads all the data. And for each type of data, there is a register register address.
+
+Okay? You have to call that register address. So if you call Register address two, you will get the latitude data. If you call Register 3, you will get longitude data. Similarly, if you call Register 6, you will get the HDOP data.
+
+If you call Register 7, you will get video. K. Then for fixed time, I guess, I had shared you the data, whether it's zero or one. There is there is five for that. I guess so.
+
+But you can just see. If not, I'll just send that as well. But it's very easy. I don't so I've taken this from our chat So serial connection is through USB. And, I've mentioned the port number, the baud rate, and time of this basically, how frequently it has to keep on collecting the data, or try collecting the, data.
+
+Then it says print and then tries, like, collecting the actual data. And, while printing, I'm also printing the time stamps. So I know, what is the time stamp of that particular data which was collected. Got it? Yes, sir.
+
+Swipe straightforward. Forty, forty five lines of code. You were asking something that I inserted. Yes, sir. So right now, this the code I showed you, sorry.
+
+It is just it is just not it's not taking, I mean, real data from the I mean, or any other. So it's just it's just a simulation. So do I, mean, I have to make it now into, like, to be able to take from the MLID. Right? Correct.
+
+So to get it from MLID, you have to use this code, test serial which I had shared, which I just shared now. Okay. So if you incorporate this, you will get the real data. So, like, I'll get the real data right, like, in my laptop? Not in your laptop because the device is not connected to your laptop.
+
+Okay. But whenever the device device is connected to the computer on which this code is running, it will collect that, actually. Okay. Yeah. Okay.
+
+So, maybe tomorrow, I will be, going to the farm. And at that time, I I was just thinking, tomorrow is what better way? Tomorrow is Saturday or tomorrow, you won't be there. So maybe next week when I will go, I will, run the phone Okay. And, share the screen with you so you will also see how, it actually works on the phone.
+
+Okay. Okay. Or maybe what I can do is once you are ready, let me know. I'll go to a nearby open space when we just close to the office, and we will just try to run the call from there Okay, sir. Using the Emblynk device.
+
+Yes, sir. Okay. So we should be able to basically, get all of this. Okay? Yes, sir.
+
+This will basically strengthen our code and the quality of, data that we are getting and to be sure how much, the data is reliable and how we are doing. Right? Yes, sir. Because that is very important. One thing is to get the data and take decision based on that, and the other is to know the quality of data and, to decide how much to rely on the data.
+
+Yes. Correct? Yes, sir. So whatever effort you are putting right now, that is basically helping us to validate the quality of data and to decide how much we can rely on. So say, for example, if we if we operate this, use this device for, say, consecutively ten, fifteen days at different locations and realize that, there are a lot of, fail fail safe that are getting triggered because of numerous reasons.
+
+Maybe the environment is not right, or the satellite count is not right, or, there is BOP related issue or anything, then that basically will help us to take a decision whether we can, reliably continue with RTK GPS or not. Are you getting me? Yes, sir. So, I I have no doubt that RTK GPS, we will in terms of, whether we will get the data or not, I don't have doubt about that. We will get the data of RTK GPS, and we will also get the course data from the, the entry date data from the course website.
+
+That all we will get. But what is the quality of that data and whether it is reliable or not is something we should know before we take that final decision and claim that we use this data to take decisions. Yes, sir. Right? Yes, sir.
+
+Logical and sensible? Yes. Okay. Okay. I'll come back to the GPS and checks satellite out.
+
+We did GPS fixed type. The check GPS fixed type ensure that the fixed type is at at least three and higher types. I actually wanted to know what is this GPS fix. Hello. Hello, sir?
+
+Hello? Yes. Can you I wanted to know what what is this GPS fix type? What does it mean? Oh, sir, it's basically like, how how do I say it?
+
+It it determines its, latitude and longitude. Like, it's it's like it it aims for the accurate we need these ones to for especially for the RTK because, it aims for the, centimeter level precision. Right? Since Uh-huh. RTK needs that.
+
+So, it what it does is it basically, checks, like, let me just give you an example. Yeah. So right now, the quality of the, accurate quality factors, like, accuracy of the fix depends upon the number of satellites. That's that's what we've already checked. And also the SDOPs, the light geometry, and also the Right.
+
+Signals, signal quality that is high SNR and all. So, so what did this fix it means that, it just it's it's like two d two d fix and three d fix. There's the different kinds of kinds of fix. So in in layman terms, let me just Yeah. Explain me, like, the layman.
+
+I I have no clue about this. So I'm just checking the So, like, in Leymandors, it just it's just saying that, it figures out where exactly it is by, by communicating with the satellite with the latitude and longitude. And sometimes it also, considers altitude. So, like, the fix means, like, it's locked in. It's locked in with the satellite.
+
+It means that it's confident about the position. So, like, if it is, a lower lower fix, let's say it's a lower fix. So, like, let's say I'll just explain you the types of fix. So if there is no fix, then the the rover cannot figure out where it is. So, if it is basic fix, then it means that, it is it is just taking a guess.
+
+It might be accurate, but it is not that accurate. So, that's not good enough for the RTK. So, there is RTK float fix again now. So, this one is accurate, but still a bit not that good. So the best one is called RTK fixed fixed.
+
+So this is like super precise, so we need this one. So basically, we just have to check how strong how accurate our position is. Okay. So I'm getting a sense. So r t k flow and r t k fix.
+
+So an RTK HBase fits and to the accuracy and reliability of positioning solution. RTK fix provides a precise and imperfect while RTK is working to achieve a fix, but has not hit 200 levels. Okay. Okay. Okay.
+
+So if it is so there are two states, right, of RTK. One state is in the float state and the one is the fixed state. Yes. For Fixed state is basically it has it has achieved that, accuracy Yes. Or, it has done that correction and is, providing that accurate data.
+
+But in case of load, it means that it is still trying to figure out. Yes. It's it's slightly it's slightly correct, but it's not not the one we want. Correct. Understood.
+
+Okay. So in terms of reliability, RTK fixed is a reliability thing. Yes. Now okay. Okay.
+
+Understood. So in order to, for this system to work properly, we need a RTK fix. Yes. If it is in a load condition, load state, we can't rely on it. Correct?
+
+Yes. It might be reliable, but, if the load is very high, then, we can't rely on it. Am I right? Yes, sir. Say, for example, the value of float is just one.
+
+Hypothetically, considering that one will be the very low value Yes. Then maybe we can rely on it. But if the float is set 10, we might not be able to rely on it. Am I right? Yes, sir.
+
+And RTK fix, even if it is one or 10, we can rely on it. Am I right? Yes, sir. Okay. Now what determines or how that is is this a controllable aspect in terms of, whether the RTK is, I mean to say if the RTK is in a float state, then is it possible for us to achieve the fixed state by doing something?
+
+Yes, sir. It's possible. Okay. And how is that done? From RTK float, you mean.
+
+How to transition from RTK float to RTK fix? Okay, sir. And what causes the state to be in r t because you would always want it to be in a fixed state. Right? Yes, sir.
+
+And not a closed state. So what conditions result in it, becoming, it coming into a float state? What causes it to, come to float state? So we should do whatever it takes to, save it from entering the float state. Right?
+
+If it is possible to control that. So so, to get RTK fixed, it's basically, how do I say it? Since since, it says since since it is set, RTK float nazar, so these are these are these are estimated with the float point numbers using when we use that medical mathematical algorithms when we calculate the precision of the location. So, this one is using float which leads to less precision. So when we say RTK fixed, we use algorithm like, to get the integer values.
+
+Since Understood. Yeah. So when you get the integer values, we get the accuracy increases more. Mhmm. Understood.
+
+So, if I am understanding it right Yeah. What will happen is, at the back end, there is a correction, value that we are getting from entry. Exactly, sir. And if it is not in integers, then the output that we will get it will be in float. And if we are getting that value in integers, then it's a fix.
+
+Yes, sir. Am I right? Something that yes, sir. Okay. Is it safe to say that, one second.
+
+Would I be right to say that it will depend on the Internet connectivity? If the Internet connectivity is good, we will always get a fixed data. And if it is, bad, then we might be getting flow, or it's got nothing to do with the Internet connectivity? I think, sir, it slightly depends, but I think it it more it depends more on the, like, the how yeah, Internet, but it depends on the location, sir. Like, if we were in a in a how do I say it?
+
+In a place where the the connection cannot be, stable. So The Internet connection? Yeah. Yeah. The Internet Internet connection.
+
+That's fine. So, Internet connection might be unstable because of multiple reasons. Yes. Location is one or it could be something else also. So I'm not about that.
+
+So, for any reason if the Internet quality is bad, we are going to get a flow. Is it safe to say that? Yes, sir. So, like, if it even if if it tries to convert it to RTK fix, it it might not be able it might not be able because of the Internet connection. So it will just stick Understood.
+
+Yeah. It will just stick to the one. Okay. Now what you need to research is, research how much, Internet bandwidth is sufficient to get the fix. Understood?
+
+Yes, sir. Whether you need five g data, you need four g data, two g data, or even LTE is fine, or, a normal two g data is fine. Because in most of the rural places, we only get two g data. Yes. And my assumption is that two g data is good enough to get a fix.
+
+Okay. Okay. But we need to validate. Yes. Two g data bandwidth sufficient to get a fix.
+
+Also, you should ask JetGPT whether Internet connection is the only cause of getting a float. No, sir. That one then, it depends upon the satellite also. I'll just search more about them. But Correct.
+
+Yeah. Correct. Correct. Alright. Good.
+
+So you have to do that. Okay. So GPS fixed then. This is good, actually. Whether we have a register which gives us this, There is a registered number five which says fixed type.
+
+So zero is no fixed and one is articulate. I don't know what this is. You have to do a little research. Okay, sir. You'll have to just go through the document of ML8 reach m 2, the device that we are using Yes.
+
+And try and understand what this register is basically trying to give us. Okay, sir. Because fixed time is nothing but, just knowing the, the nature of the data that we are getting, whether it's a integer or, a round of number. Correct? Yes.
+
+And that can be done locally using a code. I will determine whether the data that we are getting, whether it's an integer or not. And it it can be a very simple logic that if it is an integer, then it's a fix. If it is not an integer, then it's a float. Yes.
+
+But there is something that you've written. The fix that is three or four. So there are certain types. Yes. Correct?
+
+Yes. So you have to just understand how do you define this type. Three or four or one or 10, whatever it is. So whether two integers means that it's type two whether, eight decimal integer is, type one, something like that. I don't know what the logic is.
+
+Okay. Testing on it. Yeah. So we will have to basically know, you know, I mean, what what does this mean and how to interpret it. Yes.
+
+So let's do that. Then the next point, in your document is about GPS accuracy. The check GPS accuracy method checks that the word video be and position accuracy is within two meters and showing the size vertical and overall position. So what is this two meters? Which one, sir?
+
+Third bullet in the GPS health checks there in the document that you've shared, the word w. The GPS accuracy? Correct. Then you're matching two two point o meters, which is improved from less than five meters. Can we just check?
+
+Oh, sir. It's just for simulation test, this was just checking, like, if the the the GPS, like, in a sense let me see. The the the accuracy provided is is within two point zero or not since I since it was before three point zero. Oh, no. Since it was five point zero before.
+
+So I just I just I just reduce it to make it more, like, just for the simulation, to make it more accurate. Okay. So so for our purpose, we will need centimeter level, four to five centimeters. Yes. Yes.
+
+Okay. And how do we check whether the accuracy that we are getting is actually that much? I mean, how do we validate that accuracy number? So, I'll give you a real case. So say, for example, my, our rover is near a particular stone, say, for example.
+
+A stone is a stone or, see, there is a pool. Okay? There is a pool on the farm. Yes. And, the rover is standing just next to it.
+
+And I, ask my GPS system to tell me where my rover is. And it says that it is five meters away from the pole. Whereas, actually, it is just adjacent to the pole. So this means that the accuracy is not that good. Yes.
+
+But the system tells me that it is centimeter level accurate. It is for there it could be an, margin of error of four centimeters. So the fact sheet is quite different from what the system is telling. Yes. Validity me.
+
+Yes. So how do we, do this validation? We need to have a system. Right? Yes.
+
+To do this validation. How will we do that? So because we are using RTK, we would be just pumping ourselves to say that, okay, we are four to five centimeter accurate. And, wherever we are, we have the actual data, which, resonates with the real data, which resonates with the real position of the node. Yes.
+
+But the fact could be that it is not. So how do we validate this? Sir, actually, your next point is also GPS position validity. Are these two points same, GPS accuracy and position validity? They are similar, sir, but they are not exactly the same.
+
+This Okay. They are interrelated. Yeah. This this thing yeah. Go ahead.
+
+Sir, this this GPS position validity, what I what I've learned is that, during, it is a common GPS glitch that's called Null Island, sir. So, what happens is that sometimes the rover, how do I say it, like it's just a GPS glitch that if it, like, it flex if the rover thinks that it is at, zero point zero in a sense in the coordinate system in the, GPS, if it's at zero point zero, so, sometimes sometimes this happens. So it's just to handle that situation. Okay. You'll have to give me a, a case to understand how this So what what this case is or what situation, this would arise?
+
+So, like, it's like checking if the robot's map is, like, in a real place, not in, like, in the middle of the ocean or, like, just it's just how do I say it? So that it doesn't get lost, like, because it is happening. What I've learned is that it is to happen in this, GPS, navigation problem. Like, this robot will just, it, the GPS sometimes get, like, gets, how do I say, degraded in a sense that it loses track of its current location. So Okay.
+
+So it just yeah. So that it doesn't get lost. It starts it starts to give some language value. Yeah. Yeah.
+
+Yeah. Some yes, sir. Exactly. So maybe it isn't the device is actually, in a particular farm in Pune, but you because of some error, it is saying that it is in New York. Yes.
+
+Something like that. Okay. Okay. So this is at a very high level. Right?
+
+Yes. It's fine. So what have you mentioned that, method validates latitude minus ninety to ninety degrees, longitude minus fifty to one hundred and eighty degrees ranges and warns about proximity to the island. What what is all of that? There's there is just to, it confirms the position that it is within that certain, coordinates, like, certain certain, valid coordinates.
+
+So, like, yeah, it's just it's just to confirm, like, if it yeah. It's just to confirm that it is within that coordinate. Okay. This is very high level, right? Yes.
+
+Yes. It's a bit. Okay. So coming back to the accuracy part, we need to build a system or a phone where, we can actually validate. So say, for example, we've asked our system to to say, to confirm that just hold on for a second, Ron.
+
+Yes. I'm getting a problem. Other than that. Yeah, Rohan? Yes, sir.
+
+Okay. So you noted about the GPS accuracy? Yes, sir. I've heard. Okay.
+
+Are you getting the context of all the discussion that we are having? Yes. Yes. Okay. It should be logical only then, you will also be able to apply, your brain behind, how to make it work.
+
+Correct? Yes, sir. It shouldn't be that, you should be doing only what I tell you because, you are doing more than, or because I'm not actually exhibiting. You are executing. So if there is certain it's starting that issue, then you should be able to take care of that because you know the context.
+
+Yes. Okay? Yes. Yeah. Then RTK base station connection.
+
+The new check of base station connection with credentials and nodes connected to the base station. You can store it. So in our case, we we will not have the base station to begin with. Okay. We will so, do you know how this system works, the RDK system?
+
+You we have a GNS receiver. Right, sir? And then Yeah. Yeah. And then the rover So Yeah.
+
+So there is once one thing called as, the base station, and one is called the rover. Yes. Okay. So rover has one station, where it is collecting all the data from the, satellites. So it is moving.
+
+Right? The rover is moving. Now it needs some correction. So what happens is you put another, receiver as a base station on a pole, and you put that as put it in a stationary position. Yeah.
+
+And then you get the satellite satellite. Correct. Yeah. Yeah. That base station is also collecting some data.
+
+Yeah. Now when you begin working, what you do is you find the, variations between the two and based on that, you find out what is the correction value. Yes. And, use that. In that is within what do you say?
+
+I don't want to say it's complex. I haven't explored that. But, it is a little different system. What we are doing is we are not using our base station. We are not we will not have our own base station.
+
+There are base stations already installed by the government at different places across India. That's okay. And what they do is using those base stations, they come up with this correction value, which is called as the course data from the entry, website. Okay. Okay.
+
+So we will be using that. Sometime back, I mentioned you that it costs us it costs us around 6,000 rupees a month. Yes. Correct? Yes.
+
+So that is to get that correction data. If we use our own base station, then we will save those 6,000 rupees. Okay? Yes. Understood.
+
+So we are not going to use a base station. We are going to use the entered course data. So what we have to check is, in this case, the entered collection and the funds, the rate at which we are getting that connection data. So you'll you'll have to update this. Okay?
+
+Yes. Yes, sir. Instead of base station, we will be using the Internet page. Data. Check Internet connection.
+
+So in this case, we are not downloading any video or image or anything. It's your numbers that we are downloading. So I don't think we should require a data, bandwidth of more than five kilobytes. Okay? Yes.
+
+But you should just check once. And five kilobytes is a very low data rate, which which also, we should get, using a two g SIM card. Yes. Are you aware of all of these things? Yes.
+
+The two g SIM card, the, bandwidth and all of this. Yeah. Now the next is Internet connectivity check. Yeah. So now you have the context why we need the Internet connectivity.
+
+Right? Yes, sir. Internet connectivity is required to get this correction data. There. The real time corrections.
+
+Yes. An active Internet connection. Yes. So two things, whether the connection is active, that is one thing we should check, and second is the speed. Yes.
+
+Okay. These two things we should check. I don't think we require half Mbps of data. Half Mbps is too high. Okay.
+
+Okay. Like I told you, I think we will require data in kilobytes only. Okay, sir. And that too, single or double digit kilobytes. Not more than that.
+
+But you should check once and commit once. Okay, sir. Okay. So for that, you have to refer to one is the Enlid's, datasheet, Enlid reach m two. You can note it down, the device that we are using.
+
+And we'd reach m two. I think I have already shared that with you. Yes. The device. Yeah.
+
+You have to see the datasheet of that device, and also go to the website of Entrip Course India, c o r s. Okay, sir. C o r s India. Yeah. It's, do you want me to tell you the URL of this website?
+
+It's okay, sir. I'll it's okay. It's okay. Yeah. It's survey of India website.
+
+Even if you search survey of India, c o r s, you will get it. Okay? Okay, sir. Is the discussion making more sense today? Yes, sir.
+
+More relevant? Yes. Are you more into the, the application now? Yes, sir. Compared to your first day?
+
+Yes, sir. Okay. Now the next point is additional GPS specific checks. How do you need to start this with customer assistance? K.
+
+By the way, your stipend should get credited by end of day today. Okay? Yesterday, I wasn't in town, so I haven't approved the payment. Today, I will. So by end of day, your stipend will get credited.
+
+Okay? Okay, sir. Sir, for this, for this month? Or For the month of April. Okay, sir.
+
+Yeah. The module includes further GPS focus assessment to ensure optimal performance. GPS signals 10. Okay. Okay.
+
+Okay. This is a good point. GPS signals 10. It's just that I don't know what the threshold should be. How much, decibels, data is good enough signal strength?
+
+Sir, it must be above 25 dB each. Okay. Are you sure? And what is the source of this information? I've I've checked in the Internet, sir.
+
+This signal strength, it must if it is if it is the threshold is the default threshold is 15, but that is low that is low. So we need, at least, 25 above, dB. I mean, the yeah. Understood. Yes.
+
+I'm just checking whether we get that data. How will we get this data? Any idea? This GPS signature? Uh-huh.
+
+I think I'm not so sure if not this around, but I think GPS receiver it says here. So So you'll have to check. Yeah. Yeah. Go through the datasheet of emigration too.
+
+Yes. And, you also ask these questions to chat GPT. Okay. It will help you or any other chatbot. The next point is GPS constellation distribution.
+
+I I'm not sure about, GPS and Beto. Okay? But, Gallolos, Galileo, I'm sure, reach m two is subscribing to those constellations. Okay. But you have to read the datasheet.
+
+Okay. For whatever, information you are getting, say, for example, about this '25, decibel, hertz signal strength, we have to write the source that where is it mentioned that this is a good signal strength. Okay. From where is it coming that this is the default, signal strength and above this is good or below this is bad. You should have the source.
+
+That's how the documentation should be. Okay? Yeah. You have to read the datasheet and mention the reference in the datasheet. Maybe the page number and the para number.
+
+If you are referring to some URL on the Internet, put that URL. Okay. Okay. So what happens is, say, fifteen days down the line, when we are into something else and you have to come back to see this, we don't have to keep on searching and figuring in terms of where to where will I find this or where did I get this originally to claim this. It should be very easy to do.
+
+Okay? Okay, sir. Because maybe fifteen days down the line, we will be working on a very different application, and this work would have already got over. And if we face some issue and that time we have to refer back to this, it should be very easy to refer. Yes.
+
+Yeah. Satellite geometry. Change the geometric, dilution of precision, ensuring terminal satellite. Again, I don't know how we will get this data and how much relevant is it. Whether just getting the number of satellites within the coverage is sufficient or its positioning, is also or its geometric positioning is also relevant.
+
+Are you getting me? Yes, sir. So the question on the prompt to, GPT would be whether the coverage is sufficient. So when I say coverage, I don't it doesn't bother me whether the geometry or the design is put in a particular form or structure. If I'm getting 60 satellites within my coverage, it's good enough for me.
+
+Or whether those 60 satellites should be the particular geometry or particular design. How much relevant is it? Yes. Okay? Yes, sir.
+
+Is is all of this too difficult? No, sir. It's okay. I'll I'll I'll do that. Okay.
+
+If you hit the hit the roadblock, it's fine. You can let me restart it. You have to, it's your responsibility to hook by hook up to get the answers. It's fine if you don't get the answers. But my, first target is to try and attempt, first of all, to get all of this Yes.
+
+And understand. Yes. By end of this exercise, you will become an expert in GPS. Yes, Raj. I I will I will do it soon.
+
+Yeah. I will. Yeah. For every point, I'm giving you, a further drill down in terms of whether it is relevant and what exactly is required and, intertwining it with the other points. Okay?
+
+Okay, sir. So right now, we just discussed about the satellite geometry, GPS time sync. So time sync, if you remember last time I told you, it should be hundred milliseconds. Yes. Right now you mentioned one second.
+
+So one second is too high. It is 10 times higher than what we want. Yes. We want it at hundred milliseconds. Yes.
+
+So update that. Then position stability. When stationary, check for the minimal drift or time radiating stability based performance. The method is just to be the threshold, but the intent Yes. Above.
+
+Yes, sir. Right? Yes. Age of differential corrections for articulation corrections. That is yeah.
+
+Again, less than thirty seconds is too high. Okay. So so we want to do correction at hundred milliseconds level. Right? Yes, sir.
+
+So for this, first, you need to go through the course website. Go through course website. Understand the data rate that they offer. Because that is also important. No?
+
+At what data rate are they giving the corrections? Yes. If they themselves are giving the correction that every one minute, I just hypothetically stating it won't be one minute. But if they are giving it at one minute and we want to do correction at hundred milliseconds, then the system doesn't work. It says that I will issue only at the beginning.
+
+But if they say that we are doing it at five hundred milliseconds, then still we know that, okay, we want to do that five hundred milliseconds, but we are getting we want to do that hundred milliseconds, but we are getting at five hundred milliseconds. So what what else can we do? Or whether they are giving really giving it at hundred milliseconds. If they claim to provide the direction hundred milliseconds, we should know. Right?
+
+Yes, sir. I'm also noting that my you also locate them. Okay? Yes, sir. All of these.
+
+Yes. You have multipath detection. Identify signal reflection that would cause errors with an indicator. Result term? Can you explain this multipath detection?
+
+Okay. So just So, so what happens in this, GPS No. No. Just a second. Just a second.
+
+Yeah. I don't know. Sorry. Go ahead. Yes, sir.
+
+So so sometimes the signals are, it does not come directly from the signal. It sometimes bounces off the buildings and metal surfaces before reaching the our receiver. So Okay. So this bouncing is you can refer to that as as multipath. So it this will confuse our I don't know.
+
+GPS. Understood. Understood. So it's like it's like having echo. Yeah.
+
+So what happens is so what happens is, for our device, we will have 30 degrees of clear view to sky. Okay? Yes, sir. There should be nothing that should obstruct it or that comes within the vicinity of 30 degrees from that, antenna. Yes, sir.
+
+This basically avoids, this multipath issue. Okay? At initiate itself. But is there some other way? So say, for example, what is happening is we are working at the very first row of the pub, And just next to that first row, is a row of trees.
+
+Okay. Okay. So in that case, it might so happen that the 30 degrees due to sky is not possible. Yes. So in that case, how do we ensure that there is, so if at all there is multipath, how do we ensure that and what instance do we have?
+
+So that is a use case. You if possible, mention this use case that, in what situation this multipath could arise and how much relevant is it. Yes. So, because for multiple satellites, what will happen is if there are 60 satellites we are communicating with, out of that, maybe 50 satellites, we will have a clear view. For 10 satellites, we might get a multipath.
+
+Yes. See? Yes, sir. So, again, it will vary throughout each satellite. So if we are getting, multipath for only two satellites and for cleared satellites, we are getting a clear view.
+
+In that case, whether that two satellites should make any difference for us and whether it will stop our move. It shouldn't ideally. Okay? So the failsafe will will change. Whereas on the other end, out of sixty, fifty satellites are giving multipath data and the rate of multipath is too high.
+
+In that case, obviously, we can't derive the data. The data is bad. Okay? Yes. Yeah.
+
+Now just give me a second. Then environment interference, environmental factors. So it's important to define what environmental factors will affect the GPS. Yes. So one environmental factor which I can think of is the sun rays which are there around 11AM to twelve, twelve fifty PM.
+
+Yes. There is a solar, what do you call, there is a phenomena that is named after it. So the sun is shining too bright at that time. Okay. Okay.
+
+There is, I am not able to recollect the nomenclature, but that phenomenon is called something. Just find that out. Okay. That is one of the examples of environmental interference. And what can be done to solve that is also what we should find.
+
+Okay? Yes, sir. Yeah. Coordinate system configuration. Confirms the use of expected coordinate system defaulting to WGS eight four.
+
+So one second. I don't think we use WGS 84. I think we use WGS 45. Okay, sir. Do you know what this is?
+
+I know WGS 84. It's it's a global standard. No. Like, it's a GPS system that use a global standard. Right?
+
+It's like a universal map that that everyone It is. But it is it is for, it is not for India, I guess. So, it differs from country to country. One second. World geodetic system.
+
+Correct. So So I think you just use worldwide. Right? No. No.
+
+No. So WGS 45 is used in areas like Bangladesh, Bhutan, China, and India. Okay. Okay, sir. So for India, it is you WGS 45 is used.
+
+WGS 45 is also mentioned as EPSG three two six four five. Just note this out. So can you repeat? EPSG. I'll I'll put it in the chat.
+
+Okay, sir. Chat of our phone. Did you get the message? Yes. I got the message.
+
+Okay. So WGS 4 80 4, I guess, is general. Yes. Anybody can use it. It is a global thing.
+
+But Fortify specifically focuses on, Asia. Okay, sir. Bhutan, China, India, Russia, Nepal. So the closer we are, to this coordinate system, the more accurate the data we get. Okay.
+
+I I'm not very sure, but the relevance of it is, whichever WGS coordinate you mentioned, though, so the satellites get tagged, to that. So maybe for WGS 45, there will be certain specific satellites which will get tagged. Okay, sir. Okay. Which are more relevant for India.
+
+If you do 84, then it will cover lot of satellites. Okay. Certain satellites which are focused only for Europe, those might also get covered. And if The US based satellites if those get covered, then we will get a lot of, garbage data because US is too far. Yes.
+
+Okay. So, the coordinate system which is closer to us will give us much better data. Okay. So there is, this thing which is written that it is in eighty four degrees east and nine ninety degrees east. Northern hemisphere between Equator and, eighty four degrees north, onshore and offshore.
+
+So this basically covers the region, the Asian region. Okay, sir. Just do some research. It will be. Okay, sir.
+
+Okay. So I think that ends it. Then the failsafe would you I think before we get into what failsafe action should be taken, it is important to know the relevance of whatever, cases that we've identified, the specific checks that we've identified to understand the relevance and context. That we need to know first, and then based on that, we will decide on the PLC. Correct?
+
+Okay, sir. Like I mentioned about, the, the multipath one. So if out of 60, only two are reporting multipath, then maybe the fail safe action will be different. Correct? Yes.
+
+Yes, sir. You understand? Yes, sir. Can you just tell me what I told you? Sir, you So I know that you You're you were talking about the, the multipath in which it says that if it is out of 60, like, let's say out of 60 satellites I mean, out of 60 satellites, like, only two satellites are invalid.
+
+So, like, then we have to know. Like, we have to see, like, what's it? We have to check. So, yeah, we have to check that. But why why to check that?
+
+What is the relevance of it? So based on that, we will decide what sales pay save action should we take. Yes. What is pay save action? Pay save action is basically some reaction to the, the call's data that we are getting.
+
+Right? Yes, sir. K. One the only point what I wanted to, make out was what phase of action should be taken will be decided based on how critical that particular data point is and how critical that error is. Okay?
+
+Yes, sir. So we will first analyze what does what do all of these errors indicate and how critical are they? And then we will decide what phase of action should be taken. Understood. Understood?
+
+Yes, sir. Really understood. I understand. I understood, sir. Just one one note from the first part where you where you were saying that, this external sensor temperature, sir, you were saying to add in the you were telling me to add in the column, can you please, tell me again, like, I I got confused what you mean by that.
+
+Ignore or not. Ignore it. Oh, okay. Or not just ignore. Yeah.
+
+It's not critical. Okay, sir. Yeah. So you understood? Yes, sir.
+
+I'm not sure. So you have a lot of things to research on. Yeah. Once you complete this research, we will discuss. Okay, sir.
+
+Yeah. And keep updating me in terms of, how the research is going and whether you hit a roadblock at any particular point. If you realize that, okay, I'm not able to get any information about this thing, then also message me that, I haven't got so say, for example, GPS fixed site. You can if you don't find enough information, you can just ping me at the time and found any information about GPS fixed type and the points that I had mentioned. So I'm moving forward to other points.
+
+Don't just get stuck on one thing. Try for half an hour, one particular thing. Okay. It should not become an academic exercise when you just keep on researching, researching. Okay?
+
+Okay, sir. Because I'm not very sure how much information is available on that, how much is open source, how comfortably you get all of this. I'm not very sure because I haven't done this before. So I don't want you to keep sit sitting and doing this for very long. Okay, sir.
+
+Yeah. Good. Keep me updated then. Okay. Anything else?
+
+You have any question? No, sir. Okay. I just before you end the day, we will be direct. Okay?
+
+Okay, sir. Just let me know sometime before, you are done for the day. Okay, sir. Okay. Bye.
+
+Bye, sir.

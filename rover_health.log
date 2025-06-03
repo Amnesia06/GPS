@@ -1,0 +1,83 @@
+2025-04-29 14:47:58,100 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 14:47:58,100 - rover_health - INFO - Environment check: Temperature=36.502129207706645°C, Cloud cover=32.38825453448491%
+2025-04-29 14:47:58,100 - rover_health - INFO - GPS health check: Satellites=5, HDOP=1.1918342631155852
+2025-04-29 14:47:58,100 - rover_health - ERROR - Insufficient satellites: 5 < 6 required
+2025-04-29 14:47:58,100 - rover_health - ERROR - Health check failed: Insufficient satellites: 5 < 6 required
+2025-04-29 15:04:48,404 - rover_health - INFO - Starting rover health check...
+2025-04-29 15:04:48,404 - rover_health - INFO - Environment check: Temperature=23.388183549852883°C, Cloud cover=37.53962711906575%
+2025-04-29 15:04:48,404 - rover_health - INFO - Health check passed!
+2025-04-29 15:13:43,859 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 15:13:43,859 - rover_health - INFO - Environment check: Temperature=40.4354540119231°C, Cloud cover=4.910456771936724%
+2025-04-29 15:13:43,859 - rover_health - INFO - GPS health check: Satellites=5, HDOP=1.779380771893623
+2025-04-29 15:13:43,859 - rover_health - ERROR - Insufficient satellites: 5 < 6 required
+2025-04-29 15:13:43,859 - rover_health - ERROR - Health check failed: Insufficient satellites: 5 < 6 required
+2025-04-29 15:14:13,824 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 15:14:13,912 - rover_health - INFO - Environment check: Temperature=42.19016032819635°C, Cloud cover=48.130708528342936%
+2025-04-29 15:14:13,912 - rover_health - INFO - GPS health check: Satellites=6, HDOP=1.1563572359296501
+2025-04-29 15:14:13,912 - rover_health - INFO - Internet check: Connected=True, Speed=1.4047532506404592Mbps
+2025-04-29 15:14:13,912 - rover_health - INFO - All health checks passed!
+2025-04-29 15:44:29,909 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 15:44:30,004 - rover_health - INFO - Environment check: Temperature=45.57269194116897°C, Cloud cover=79.60487630053959%
+2025-04-29 15:44:30,004 - rover_health - INFO - GPS health check: Satellites=9, HDOP=1.3674465496365125
+2025-04-29 15:44:30,004 - rover_health - INFO - GPS fix type check: Fix type=2
+2025-04-29 15:44:30,004 - rover_health - INFO - GPS accuracy check: VDOP=2.1088742600922727, Position accuracy=1.3506049297661218m
+2025-04-29 15:44:30,004 - rover_health - INFO - GPS position validity check: Latitude=47.60581087185919, Longitude=-122.33250729061791
+2025-04-29 15:44:30,004 - rover_health - INFO - GPS position drift check: No previous position available
+2025-04-29 15:44:30,004 - rover_health - INFO - Internet check: Connected=True, Speed=4.558477429072703Mbps
+2025-04-29 15:44:30,004 - rover_health - INFO - All health checks passed!
+2025-04-29 15:46:34,148 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 15:46:34,241 - rover_health - INFO - Environment check: Temperature=45.23261345526116°C, Cloud cover=62.406678687589185%
+2025-04-29 15:46:34,241 - rover_health - INFO - GPS health check: Satellites=9, HDOP=1.8060953007652416
+2025-04-29 15:46:34,241 - rover_health - INFO - GPS fix type check: Fix type=2
+2025-04-29 15:46:34,241 - rover_health - INFO - GPS accuracy check: VDOP=1.2284238599981203, Position accuracy=2.1058176245653186m
+2025-04-29 15:46:34,241 - rover_health - ERROR - Position accuracy too low: 2.1058176245653186m > 2.0m threshold
+2025-04-29 15:46:34,241 - rover_health - ERROR - Health check failed: Position accuracy too low: 2.1058176245653186m > 2.0m threshold
+2025-04-29 15:46:37,010 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 15:46:37,010 - rover_health - INFO - Environment check: Temperature=31.127100785111047°C, Cloud cover=40.15489372385525%
+2025-04-29 15:46:37,010 - rover_health - INFO - GPS health check: Satellites=6, HDOP=0.9262297877041847
+2025-04-29 15:46:37,010 - rover_health - INFO - GPS fix type check: Fix type=3
+2025-04-29 15:46:37,010 - rover_health - INFO - GPS accuracy check: VDOP=1.6011390248310367, Position accuracy=2.715668462384513m
+2025-04-29 15:46:37,010 - rover_health - ERROR - Position accuracy too low: 2.715668462384513m > 2.0m threshold
+2025-04-29 15:46:37,010 - rover_health - ERROR - Health check failed: Position accuracy too low: 2.715668462384513m > 2.0m threshold
+2025-04-29 15:46:38,526 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 15:46:38,526 - rover_health - INFO - Environment check: Temperature=48.66682289136095°C, Cloud cover=18.915117298981876%
+2025-04-29 15:46:38,526 - rover_health - INFO - GPS health check: Satellites=12, HDOP=1.000103108079136
+2025-04-29 15:46:38,526 - rover_health - INFO - GPS fix type check: Fix type=4
+2025-04-29 15:46:38,526 - rover_health - INFO - GPS accuracy check: VDOP=1.5728608154277213, Position accuracy=2.992775196359374m
+2025-04-29 15:46:38,526 - rover_health - ERROR - Position accuracy too low: 2.992775196359374m > 2.0m threshold
+2025-04-29 15:46:38,526 - rover_health - ERROR - Health check failed: Position accuracy too low: 2.992775196359374m > 2.0m threshold
+2025-04-29 15:46:39,989 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 15:46:39,989 - rover_health - INFO - Environment check: Temperature=40.401365600003956°C, Cloud cover=76.26269184254069%
+2025-04-29 15:46:39,989 - rover_health - INFO - GPS health check: Satellites=9, HDOP=1.8304732551582497
+2025-04-29 15:46:39,989 - rover_health - INFO - GPS fix type check: Fix type=1
+2025-04-29 15:46:39,989 - rover_health - ERROR - Insufficient GPS fix type: GPS fix < DGPS fix required
+2025-04-29 15:46:39,989 - rover_health - ERROR - Health check failed: Insufficient GPS fix type: GPS fix < DGPS fix required
+2025-04-29 16:19:04,210 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 16:19:04,210 - rover_health - INFO - Environment check: Temperature=47.80250652095779°C, Cloud cover=14.328597206308809%
+2025-04-29 16:19:04,210 - rover_health - INFO - Check environment passed.
+2025-04-29 16:19:04,210 - rover_health - INFO - GPS health check: Satellites=5, HDOP=1.9094128302659796
+2025-04-29 16:19:04,210 - rover_health - ERROR - Insufficient satellites: 5 < 6 required
+2025-04-29 16:19:04,210 - rover_health - ERROR - Check gps failed: Insufficient satellites: 5 < 6 required
+2025-04-29 16:19:04,210 - rover_health - INFO - GPS fix type check: Fix type=4
+2025-04-29 16:19:04,210 - rover_health - INFO - Check gps_fix_type passed.
+2025-04-29 16:19:04,210 - rover_health - INFO - GPS accuracy check: VDOP=2.005748366068028, Position accuracy=2.670845690356287m
+2025-04-29 16:19:04,210 - rover_health - INFO - Check gps_accuracy passed.
+2025-04-29 16:19:04,210 - rover_health - INFO - GPS position validity check: Latitude=47.606564333324854, Longitude=-122.33219943696142
+2025-04-29 16:19:04,210 - rover_health - INFO - Check gps_position_validity passed.
+2025-04-29 16:19:04,210 - rover_health - INFO - Internet check (attempt 1/3): Connected=True, Speed=3.4039753434055817Mbps
+2025-04-29 16:19:04,210 - rover_health - INFO - Check internet passed.
+2025-04-29 16:19:04,210 - rover_health - WARNING - The following checks failed: gps
+2025-04-29 16:19:12,743 - rover_health - INFO - Starting complete rover health check...
+2025-04-29 16:19:12,743 - rover_health - INFO - Environment check: Temperature=46.171966251859125°C, Cloud cover=13.785391830393241%
+2025-04-29 16:19:12,758 - rover_health - INFO - Check environment passed.
+2025-04-29 16:19:12,758 - rover_health - INFO - GPS health check: Satellites=8, HDOP=1.2271996070634497
+2025-04-29 16:19:12,758 - rover_health - INFO - Check gps passed.
+2025-04-29 16:19:12,758 - rover_health - INFO - GPS fix type check: Fix type=3
+2025-04-29 16:19:12,758 - rover_health - INFO - Check gps_fix_type passed.
+2025-04-29 16:19:12,758 - rover_health - INFO - GPS accuracy check: VDOP=1.8374127507548779, Position accuracy=2.7273688600470134m
+2025-04-29 16:19:12,758 - rover_health - INFO - Check gps_accuracy passed.
+2025-04-29 16:19:12,758 - rover_health - INFO - GPS position validity check: Latitude=47.60605868618622, Longitude=-122.33169212224729
+2025-04-29 16:19:12,760 - rover_health - INFO - Check gps_position_validity passed.
+2025-04-29 16:19:12,760 - rover_health - INFO - Internet check (attempt 1/3): Connected=True, Speed=0.7303323262875483Mbps
+2025-04-29 16:19:12,760 - rover_health - INFO - Check internet passed.
+2025-04-29 16:19:12,760 - rover_health - INFO - All health checks passed!

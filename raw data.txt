@@ -1,0 +1,964 @@
+
+
+=== ROVER STATUS [20:27:40.487] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:40.590] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:40.693] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:40.797] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:40.899] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:41.003] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:41,091,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+
+=== ROVER STATUS [20:27:41.106] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+❌ No serial connection available
+
+=== ROVER STATUS [20:27:41.214] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:41,291,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+⚠️ Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+🛑 COMMAND: Stop
+2025-05-23 20:27:41,291,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+🔄 Attempting recovery from GPS data stale (>300ms without NMEA fix)
+Resetting GPS data timer without disconnecting
+2025-05-23 20:27:41,291,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-23 20:27:41,297,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-23 20:27:41,297,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)        
+
+=== ROVER STATUS [20:27:41.316] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:41.419] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:41,497,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+⚠️ Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+🛑 COMMAND: Stop
+2025-05-23 20:27:41,497,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+🔄 Attempting recovery from GPS corrections stale (>1000ms old sustained for >5000ms)
+Resetting GPS correction timer without disconnecting
+2025-05-23 20:27:41,497,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-23 20:27:41,497,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+
+=== ROVER STATUS [20:27:41.522] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:41.630] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:41.740] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:41.843] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:41.946] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:42.061] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:42.164] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+❌ No serial connection available
+📡 Stopped GPS data reading thread
+
+=== ROVER STATUS [20:27:42.274] ===🔌 Disconnecting from GPS...
+
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:42.414] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:42,500,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+2025-05-23 20:27:42,510,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)     
+⚠️ Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+🛑 COMMAND: Stop
+2025-05-23 20:27:42,510,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+🔄 Attempting recovery from GPS data stale (>300ms without NMEA fix)
+Resetting GPS data timer without disconnecting
+2025-05-23 20:27:42,515,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+
+=== ROVER STATUS [20:27:42.517] ===2025-05-23 20:27:42,515,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+
+GPS Fix: GPS
+2025-05-23 20:27:42,517,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)        
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:42.621] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:42,716,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+⚠️ Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+🛑 COMMAND: Stop
+2025-05-23 20:27:42,721,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+🔄 Attempting recovery from GPS corrections stale (>1000ms old sustained for >5000ms)
+Resetting GPS correction timer without disconnecting
+
+=== ROVER STATUS [20:27:42.725] ===
+2025-05-23 20:27:42,725,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+2025-05-23 20:27:42,725,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:42.832] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:42,926,rover_failsafe,INFO,GNSS Status: {"timestamp": "2025-05-23T20:27:42.926689", "has_fix": true, "fix_type": "NONE", "satellites": 10, "pdop": 99.9, "hdop": 1.0, "position": [0.0, 0.0], "internet_connected": true, "correction_age": 999.0, "ntrip_data_rate": 0.0, "active_failsafe": "GPS corrections stale (>1000ms old sustained for >5000ms)", "in_recovery": true, "in_sleep_mode": false, "drift_severity": 0, "recommended_action": "Pause movement"}
+
+=== ROVER STATUS [20:27:42.934] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:43.040] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:43.144] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+❌ No serial connection available
+
+=== ROVER STATUS [20:27:43.249] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:43.358] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:43.460] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:43.564] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:43.668] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:43,730,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+
+=== ROVER STATUS [20:27:43.772] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:43.877] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:43,929,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+⚠️ Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+🛑 COMMAND: Stop
+2025-05-23 20:27:43,929,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+🔄 Attempting recovery from GPS data stale (>300ms without NMEA fix)
+Resetting GPS data timer without disconnecting
+2025-05-23 20:27:43,929,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-23 20:27:43,929,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-23 20:27:43,929,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)        
+
+=== ROVER STATUS [20:27:43.980] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:44.086] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:44,132,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+⚠️ Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+🛑 COMMAND: Stop
+2025-05-23 20:27:44,132,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+🔄 Attempting recovery from GPS corrections stale (>1000ms old sustained for >5000ms)
+Resetting GPS correction timer without disconnecting
+2025-05-23 20:27:44,132,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-23 20:27:44,132,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+❌ No serial connection available
+
+=== ROVER STATUS [20:27:44.193] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:44.298] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:44.401] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:44.505] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:44.608] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:44.716] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+🔌 Disconnect complete
+
+=== ROVER STATUS [20:27:44.820] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:44.929] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:45.034] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:45,136,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+
+=== ROVER STATUS [20:27:45.137] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+❌ No serial connection available
+
+=== ROVER STATUS [20:27:45.240] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:45,337,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+⚠️ Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+🛑 COMMAND: Stop
+2025-05-23 20:27:45,337,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+🔄 Attempting recovery from GPS data stale (>300ms without NMEA fix)
+Resetting GPS data timer without disconnecting
+2025-05-23 20:27:45,339,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-23 20:27:45,339,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-23 20:27:45,339,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)        
+
+=== ROVER STATUS [20:27:45.343] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:45.446] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:45,541,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+⚠️ Failsafe triggered: GPS corrections stale (>1000ms old sustained for >5000ms)
+🛑 COMMAND: Stop
+2025-05-23 20:27:45,541,rover_failsafe,INFO,Starting recovery for: GPS corrections stale (>1000ms old sustained for >5000ms)
+🔄 Attempting recovery from GPS corrections stale (>1000ms old sustained for >5000ms)
+Resetting GPS correction timer without disconnecting
+2025-05-23 20:27:45,541,rover_failsafe,INFO,Attempting to reconnect to NTRIP server
+2025-05-23 20:27:45,541,rover_failsafe,INFO,Simulation mode: Waiting for NTRIP reconnection
+
+=== ROVER STATUS [20:27:45.558] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:45.665] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:45.768] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:45.875] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:45.980] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:46.083] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:46.187] ===❌ No serial connection available
+
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:46.292] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:46.394] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:46.497] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:46,547,rover_failsafe,INFO,Recovery successful for: GPS corrections stale (>1000ms old sustained for >5000ms)
+
+=== ROVER STATUS [20:27:46.600] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+
+=== ROVER STATUS [20:27:46.708] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+2025-05-23 20:27:46,748,rover_failsafe,WARNING,GNSS Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+⚠️ Failsafe triggered: GPS data stale (>300ms without NMEA fix)
+🛑 COMMAND: Stop
+2025-05-23 20:27:46,748,rover_failsafe,INFO,Starting recovery for: GPS data stale (>300ms without NMEA fix)
+🔄 Attempting recovery from GPS data stale (>300ms without NMEA fix)
+Resetting GPS data timer without disconnecting
+2025-05-23 20:27:46,750,rover_failsafe,INFO,Attempting to reconnect to GNSS receiver
+2025-05-23 20:27:46,750,rover_failsafe,INFO,Simulation mode: Waiting for GNSS reconnection
+2025-05-23 20:27:46,750,rover_failsafe,INFO,Recovery successful for: GPS data stale (>300ms without NMEA fix)        
+
+=== ROVER STATUS [20:27:46.811] ===
+GPS Fix: GPS
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
+Distance to Waypoint: 2.540m
+====================
+
+✅ GPS cleanup complete
+Stopping GPS logger...
+📡 Stopping GPS data logger
+Stopping failsafe monitoring...
+
+=== ROVER STATUS [20:27:46.934] ===
+2025-05-23 20:27:46,967,rover_failsafe,INFO,Failsafe monitoring stopped
+GPS Fix: GPS
+✅ Cleanup complete
+Satellites: 10
+HDOP: 1.2
+Position (Lat/Lon): 18.569832, 73.816772
+Current Position (UTM): 2.540, 20.000
+Heading: N/A
+📍 Horizontal movement detected: dx=-2.5400, setting heading to 180°
+Next Waypoint: 0.000, 20.000
+Heading to Waypoint: 180.0°
