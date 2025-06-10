@@ -349,7 +349,7 @@ def display_gps_status():
             gps_writer.writerow(headers)
             print(f"Created CSV header in {csv_file}")
     
-    log_interval = 0.01  # Log every 0.1 second
+    log_interval = 0.1  # Log every 0.1 second
     last_log_time = time.time()
     
     while True:
@@ -427,11 +427,17 @@ def display_gps_status():
                         utm_x, utm_y, heading, direction_16
                     ])
                     
-                    # Debug message
+                    # Debug message - show more detailed info
                     status_msg = 'Data logged'
                     if rover and hasattr(rover, 'gps_reader') and rover.gps_reader:
                         if rover.gps_reader.last_position:
-                            status_msg += ' (GPS Active)'
+                            pos = rover.gps_reader.last_position
+                            fix_quality = pos.get('fix_quality', 'Unknown')
+                            sats_visible = pos.get('satellites', 0)
+                            sats_used = len(pos.get('satellites_used', []))
+                            pdop_val = pos.get('pdop', 99.9)
+                            vdop_val = pos.get('vdop', 99.9)
+                            status_msg += f' (GPS: {fix_quality}, Sats: {sats_visible}/{sats_used}, PDOP: {pdop_val:.1f}, VDOP: {vdop_val:.1f})'
                         else:
                             status_msg += ' (GPS No Fix)'
                     else:
@@ -441,32 +447,70 @@ def display_gps_status():
                     
                 last_log_time = current_time
             
-            # Existing print statements for real-time display
+            # Enhanced real-time display with better formatting
             print(f"\n=== ROVER STATUS [{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] ===")
             
             if rover and hasattr(rover, 'gps_reader') and rover.gps_reader:
                 position = rover.gps_reader.last_position
                 
                 if position:
-                    print(f"GPS Fix: {position.get('fix_quality', 'Unknown')}")
-                    print(f"Satellites: {position.get('satellites', 0)}")
-                    print(f"Satellites Used: {len(position.get('satellites_used', []))}")
-                    print(f"HDOP: {position.get('hdop', 99.9):.1f}")
-                    print(f"PDOP: {position.get('pdop', 99.9):.1f}")
-                    print(f"VDOP: {position.get('vdop', 99.9):.1f}")
-                    print(f"Position (Lat/Lon): {position.get('latitude', 0.0):.6f}, {position.get('longitude', 0.0):.6f}")
-                    print(f"Position Errors - Lat: {position.get('lat_error', 0.0):.3f}m, Lon: {position.get('lon_error', 0.0):.3f}m, Alt: {position.get('alt_error', 0.0):.3f}m")
+                    fix_quality = position.get('fix_quality', 'Unknown')
+                    satellites_visible = position.get('satellites', 0)
+                    satellites_used_list = position.get('satellites_used', [])
+                    satellites_used_count = len(satellites_used_list)
+                    hdop = position.get('hdop', 99.9)
+                    pdop = position.get('pdop', 99.9)
+                    vdop = position.get('vdop', 99.9)
+                    
+                    # Color coding for fix quality
+                    if fix_quality == 'RTK Fixed':
+                        fix_display = f"🟢 {fix_quality}"
+                    elif fix_quality == 'RTK Float':
+                        fix_display = f"🟡 {fix_quality}"
+                    elif fix_quality in ['GPS', 'DGPS']:
+                        fix_display = f"🔴 {fix_quality}"
+                    else:
+                        fix_display = f"⚫ {fix_quality}"
+                    
+                    print(f"GPS Fix: {fix_display}")
+                    print(f"Satellites Visible: {satellites_visible}")
+                    print(f"Satellites Used: {satellites_used_count}")
+                    if satellites_used_list:
+                        print(f"Satellite PRNs: {satellites_used_list}")
+                    
+                    # DOP values with quality indicators
+                    print(f"HDOP: {hdop:.2f} {'🟢' if hdop < 2.0 else '🟡' if hdop < 5.0 else '🔴'}")
+                    print(f"PDOP: {pdop:.2f} {'🟢' if pdop < 3.0 else '🟡' if pdop < 6.0 else '🔴'}")
+                    print(f"VDOP: {vdop:.2f} {'🟢' if vdop < 3.0 else '🟡' if vdop < 6.0 else '🔴'}")
+                    
+                    print(f"Position (Lat/Lon): {position.get('latitude', 0.0):.8f}, {position.get('longitude', 0.0):.8f}")
+                    print(f"Altitude: {position.get('altitude', 0.0):.3f}m")
+                    
+                    # Position errors
+                    lat_err = position.get('lat_error', 0.0)
+                    lon_err = position.get('lon_error', 0.0)
+                    alt_err = position.get('alt_error', 0.0)
+                    print(f"Position Errors - Lat: {lat_err:.3f}m, Lon: {lon_err:.3f}m, Alt: {alt_err:.3f}m")
+                    
                     print(f"Current Position (UTM): {rover.x:.3f}, {rover.y:.3f}")
                     
-                    if 'heading' in position:
+                    if 'heading' in position and position['heading'] != 'N/A':
                         heading = position['heading']
                         direction_16 = degrees_to_cardinal_16(heading)
                         print(f"Heading: {heading:.1f}° ({direction_16})")
                     else:
                         print("Heading: N/A")
+                        
+                    # Additional RTK-specific info
+                    if 'mode' in position:
+                        print(f"GPS Mode: {position['mode']} (A=Auto, M=Manual)")
+                    if 'fix_type' in position:
+                        fix_type_map = {1: 'No Fix', 2: '2D Fix', 3: '3D Fix'}
+                        print(f"Fix Type: {fix_type_map.get(position['fix_type'], 'Unknown')}")
+                        
                 else:
                     print("GPS Fix: No Fix Available")
-                    print("Satellites: 0")
+                    print("Satellites Visible: 0")
                     print("Satellites Used: 0")
                     print("HDOP: N/A")
                     print("PDOP: N/A")  
@@ -478,7 +522,7 @@ def display_gps_status():
             else:
                 print("GPS Status: DISCONNECTED")
                 print("GPS Fix: No Connection")
-                print("Satellites: N/A")
+                print("Satellites Visible: N/A")
                 print("Satellites Used: N/A")
                 print("HDOP: N/A")
                 print("PDOP: N/A")
@@ -521,6 +565,8 @@ def display_gps_status():
             except:
                 pass
             time.sleep(0.1)
+
+
 
 # Add after the imports section
 rover = None
@@ -764,28 +810,53 @@ def setup_gps_direct_approach(rover):
                                 parts = line.split(',')
                                 if len(parts) >= 15 and parts[6] != '0' and parts[2] and parts[4]:
                                     try:
+                                        # Convert DDMM.MMMM to decimal degrees
+                                        lat_raw = parts[2]
+                                        lon_raw = parts[4]
+                                        
+                                        lat_deg = int(lat_raw[:2])
+                                        lat_min = float(lat_raw[2:])
+                                        latitude = lat_deg + lat_min / 60.0
+                                        
+                                        lon_deg = int(lon_raw[:3])
+                                        lon_min = float(lon_raw[3:])
+                                        longitude = lon_deg + lon_min / 60.0
+                                        
+                                        if parts[3] == 'S':
+                                            latitude = -latitude
+                                        if parts[5] == 'W':
+                                            longitude = -longitude
+                                        
+                                        # Map fix quality to proper RTK status
+                                        fix_quality_map = {
+                                            '0': 'Invalid',
+                                            '1': 'GPS',
+                                            '2': 'DGPS',
+                                            '3': 'PPS',
+                                            '4': 'RTK Fixed',  # This is RTK Fixed
+                                            '5': 'RTK Float',  # This is RTK Float
+                                            '6': 'Estimated',
+                                            '7': 'Manual',
+                                            '8': 'Simulation'
+                                        }
+                                        
                                         position = {
-                                            'latitude': float(parts[2][:2]) + float(parts[2][2:]) / 60.0,
-                                            'longitude': float(parts[4][:3]) + float(parts[4][3:]) / 60.0,
+                                            'latitude': latitude,
+                                            'longitude': longitude,
                                             'altitude': float(parts[9]) if parts[9] else 0.0,
                                             'satellites': int(parts[7]) if parts[7] else 0,
                                             'hdop': float(parts[8]) if parts[8] else 99.9,
-                                            'fix_quality': {
-                                                '0': 'Invalid',
-                                                '1': 'GPS',
-                                                '2': 'DGPS',
-                                                '4': 'RTK Fixed',
-                                                '5': 'RTK Float'
-                                            }.get(parts[6], 'Unknown')
+                                            'fix_quality': fix_quality_map.get(parts[6], 'Unknown'),
+                                            'solution_status': fix_quality_map.get(parts[6], 'Unknown')  # Add this for compatibility
                                         }
-                                        if parts[3] == 'S':
-                                            position['latitude'] = -position['latitude']
-                                        if parts[5] == 'W':
-                                            position['longitude'] = -position['longitude']
-                                        emlid_reader.last_position = position
+                                        
+                                        if emlid_reader.last_position is None:
+                                            emlid_reader.last_position = {}
+                                        emlid_reader.last_position.update(position)
                                         emlid_reader.last_update_time = time.time()
+                                        
                                         for callback in emlid_reader.callbacks:
-                                            callback(position)
+                                            callback(emlid_reader.last_position)
                                     except Exception as parse_e:
                                         print(f"NMEA parsing error: {parse_e}")
                             
@@ -804,26 +875,53 @@ def setup_gps_direct_approach(rover):
                                     except Exception as parse_e:
                                         print(f"$GPRMC parsing error: {parse_e}")
                             
-                            # Parse $GPGSA or $GNGSA for satellite status and DOP
+                            # Parse $GPGSA or $GNGSA for satellite status and DOP - FIXED VERSION
                             elif line.startswith(('$GPGSA', '$GNGSA')):
                                 parts = line.split(',')
                                 if len(parts) >= 18:
                                     try:
-                                        mode = parts[1]
-                                        fix_type = int(parts[2])
-                                        satellites_used = [int(sat) for sat in parts[3:15] if sat]
-                                        pdop = float(parts[15]) if parts[15] else 99.9
-                                        hdop = float(parts[16]) if parts[16] else 99.9
-                                        vdop = float(parts[17].split('*')[0]) if parts[17] else 99.9
+                                        mode = parts[1]  # A = Auto, M = Manual
+                                        fix_type = int(parts[2]) if parts[2] else 0  # 1=No fix, 2=2D, 3=3D
+                                        
+                                        # Extract satellites used (positions 3-14)
+                                        satellites_used = []
+                                        for i in range(3, 15):  # Positions 3-14 contain satellite PRNs
+                                            if i < len(parts) and parts[i]:
+                                                try:
+                                                    sat_prn = int(parts[i])
+                                                    satellites_used.append(sat_prn)
+                                                except ValueError:
+                                                    pass
+                                        
+                                        # Extract DOP values - handle checksum properly
+                                        pdop = 99.9
+                                        hdop = 99.9
+                                        vdop = 99.9
+                                        
+                                        if len(parts) >= 16 and parts[15]:
+                                            pdop = float(parts[15])
+                                        if len(parts) >= 17 and parts[16]:
+                                            hdop = float(parts[16])
+                                        if len(parts) >= 18 and parts[17]:
+                                            # Remove checksum from VDOP if present
+                                            vdop_str = parts[17].split('*')[0]
+                                            if vdop_str:
+                                                vdop = float(vdop_str)
+                                        
                                         if emlid_reader.last_position is None:
                                             emlid_reader.last_position = {}
+                                        
                                         emlid_reader.last_position.update({
                                             'mode': mode,
                                             'fix_type': fix_type,
                                             'satellites_used': satellites_used,
                                             'pdop': pdop,
+                                            'hdop': hdop,  # Update HDOP from GSA if available
                                             'vdop': vdop
                                         })
+                                        
+                                        print(f"🛰️ GSA: Mode={mode}, Fix={fix_type}, Sats Used={len(satellites_used)}, PDOP={pdop:.1f}, HDOP={hdop:.1f}, VDOP={vdop:.1f}")
+                                        
                                         for callback in emlid_reader.callbacks:
                                             callback(emlid_reader.last_position)
                                     except Exception as parse_e:
@@ -841,7 +939,9 @@ def setup_gps_direct_approach(rover):
                                         orientation = float(parts[5]) if parts[5] else 0.0
                                         lat_error = float(parts[6]) if parts[6] else 0.0
                                         lon_error = float(parts[7]) if parts[7] else 0.0
-                                        alt_error = float(parts[8].split('*')[0]) if parts[8] else 0.0
+                                        alt_error_str = parts[8].split('*')[0] if parts[8] else '0.0'
+                                        alt_error = float(alt_error_str) if alt_error_str else 0.0
+                                        
                                         if emlid_reader.last_position is None:
                                             emlid_reader.last_position = {}
                                         emlid_reader.last_position.update({
@@ -881,6 +981,7 @@ def setup_gps_direct_approach(rover):
                         print("Too many errors in reading thread, resetting")
                         error_count = 0
                     time.sleep(1.0)   
+        
         # Start our custom reading thread
         reading_thread = threading.Thread(target=custom_reading_thread, daemon=True)
         reading_thread.start()
@@ -895,6 +996,7 @@ def setup_gps_direct_approach(rover):
     except Exception as e:
         print(f"❌ Direct GPS setup failed: {e}")
         return False
+
 def enhanced_gps_status_monitor():
     """Enhanced GPS status monitor with health checks"""
     global rover
