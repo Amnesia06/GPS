@@ -768,16 +768,19 @@ def setup_gps_direct_approach(rover):
     try:
         # Create a minimal EmlidGPSReader that just uses our working connection
         emlid_reader = EmlidGPSReader(port='COM12', baud_rate=115200)
-        emlid_reader.serial_connection = global_serial_connection  # Use our already open connection
+        emlid_reader.serial_connection = global_serial_connection
         emlid_reader.simulate_gps = False
         
         # Register callback
         update_rover_from_emlid(rover, emlid_reader)
         
-        # Create a custom reading thread that doesn't use the EmlidGPSReader's methods
+        # Create a custom reading thread
         def custom_reading_thread():
             error_count = 0
             max_errors = 10
+            satellites_in_view = {}  # Use dict to avoid duplicates, key = PRN
+            satellites_used = []     # Track satellites used in solution
+            constellation_stats = {}  # Track stats per constellation
             
             while True:
                 try:
@@ -801,12 +804,116 @@ def setup_gps_direct_approach(rover):
                         line = global_serial_connection.readline().decode('utf-8', errors='ignore').strip()
                         if line:
                             current_time = time.time()
-                            if not hasattr(custom_reading_thread, 'last_print_time') or current_time - custom_reading_thread.last_print_time >= 1.0:
+                            if not hasattr(custom_reading_thread, 'last_print_time') or current_time - custom_reading_thread.last_print_time >= 2.0:
                                 print(f"📡 NMEA: {line}")
                                 custom_reading_thread.last_print_time = current_time
                             
+                            # Parse ALL GSV messages - ENHANCED to catch more constellations
+                            if 'GSV' in line and line.startswith('$'):
+                                parts = line.split(',')
+                                if len(parts) >= 4:
+                                    try:
+                                        constellation = line[:6]  # e.g., $GPGSV, $GNGSV, $GLGSV, etc.
+                                        total_messages = int(parts[1]) if parts[1] else 0
+                                        message_number = int(parts[2]) if parts[2] else 0
+                                        total_sats_reported = int(parts[3]) if parts[3] else 0
+                                        
+                                        # Initialize constellation tracking
+                                        if constellation not in constellation_stats:
+                                            constellation_stats[constellation] = {
+                                                'expected_messages': total_messages,
+                                                'received_messages': 0,
+                                                'satellites_count': 0
+                                            }
+                                        
+                                        # If this is message 1, reset the constellation data
+                                        if message_number == 1:
+                                            constellation_stats[constellation] = {
+                                                'expected_messages': total_messages,
+                                                'received_messages': 0,
+                                                'satellites_count': total_sats_reported
+                                            }
+                                            
+                                            # Remove old satellites from this constellation
+                                            constellation_prefixes = {
+                                                '$GPGSV': range(1, 33),      # GPS: PRN 1-32
+                                                '$GLGSV': range(65, 97),     # GLONASS: PRN 65-96 (sometimes 1-24)
+                                                '$GAGSV': range(301, 337),   # Galileo: PRN 301-336 (sometimes 1-36)
+                                                '$GBGSV': range(401, 438),   # BeiDou: PRN 401-437 (sometimes 1-37)
+                                                '$GQGSV': range(201, 237),   # QZSS: PRN 201-237 (sometimes 1-10)
+                                                '$GIGSV': range(501, 537),   # IRNSS: PRN 501-537
+                                                '$GNGSV': range(1, 600)      # Mixed: could be any
+                                            }
+                                            
+                                            # More flexible PRN removal - remove by constellation type
+                                            if constellation in constellation_prefixes:
+                                                prn_range = constellation_prefixes[constellation]
+                                                # Remove satellites that might belong to this constellation
+                                                satellites_in_view = {k: v for k, v in satellites_in_view.items() 
+                                                                    if not (v.get('constellation') == constellation)}
+                                        
+                                        # Parse satellite info (up to 4 satellites per GSV message)
+                                        satellites_in_this_message = 0
+                                        for i in range(4, min(len(parts), 20), 4):
+                                            if i + 3 < len(parts):
+                                                sat_prn = parts[i].strip() if parts[i] else None
+                                                elevation = parts[i + 1].strip() if parts[i + 1] else None
+                                                azimuth = parts[i + 2].strip() if parts[i + 2] else None
+                                                snr = parts[i + 3].split('*')[0].strip() if parts[i + 3] else None
+                                                
+                                                if sat_prn and sat_prn != '':
+                                                    try:
+                                                        prn = int(sat_prn)
+                                                        # Create unique key combining constellation and PRN
+                                                        sat_key = f"{constellation}_{prn}"
+                                                        
+                                                        sat_info = {
+                                                            'prn': prn,
+                                                            'constellation': constellation,
+                                                            'elevation': int(elevation) if elevation and elevation != '' else 0,
+                                                            'azimuth': int(azimuth) if azimuth and azimuth != '' else 0,
+                                                            'snr': int(snr) if snr and snr != '' else 0,
+                                                            'key': sat_key
+                                                        }
+                                                        satellites_in_view[sat_key] = sat_info
+                                                        satellites_in_this_message += 1
+                                                    except ValueError as ve:
+                                                        print(f"⚠️ Error parsing satellite PRN '{sat_prn}': {ve}")
+                                        
+                                        # Update message tracking
+                                        constellation_stats[constellation]['received_messages'] = message_number
+                                        
+                                        # Update position data with total satellite count
+                                        if emlid_reader.last_position is None:
+                                            emlid_reader.last_position = {}
+                                        
+                                        total_sats_visible = len(satellites_in_view)
+                                        emlid_reader.last_position['satellites'] = total_sats_visible
+                                        emlid_reader.last_position['satellites_in_view'] = list(satellites_in_view.values())
+                                        
+                                        # Detailed logging every few seconds
+                                        if not hasattr(custom_reading_thread, 'last_detailed_log') or current_time - custom_reading_thread.last_detailed_log >= 3.0:
+                                            print(f"🛰️ {constellation}: Msg {message_number}/{total_messages}, Reported: {total_sats_reported}, This msg: {satellites_in_this_message}")
+                                            print(f"🛰️ Total satellites visible across all constellations: {total_sats_visible}")
+                                            
+                                            # Show breakdown by constellation
+                                            constellation_breakdown = {}
+                                            for sat_key, sat_info in satellites_in_view.items():
+                                                const = sat_info['constellation']
+                                                if const not in constellation_breakdown:
+                                                    constellation_breakdown[const] = 0
+                                                constellation_breakdown[const] += 1
+                                            
+                                            for const, count in constellation_breakdown.items():
+                                                print(f"   {const}: {count} satellites")
+                                            
+                                            custom_reading_thread.last_detailed_log = current_time
+                                        
+                                    except Exception as gsv_e:
+                                        print(f"GSV parsing error for {line}: {gsv_e}")
+                            
                             # Parse $GPGGA or $GNGGA for position data
-                            if line.startswith(('$GPGGA', '$GNGGA')):
+                            elif line.startswith(('$GPGGA', '$GNGGA')):
                                 parts = line.split(',')
                                 if len(parts) >= 15 and parts[6] != '0' and parts[2] and parts[4]:
                                     try:
@@ -833,8 +940,8 @@ def setup_gps_direct_approach(rover):
                                             '1': 'GPS',
                                             '2': 'DGPS',
                                             '3': 'PPS',
-                                            '4': 'RTK Fixed',  # This is RTK Fixed
-                                            '5': 'RTK Float',  # This is RTK Float
+                                            '4': 'RTK Fixed',
+                                            '5': 'RTK Float',
                                             '6': 'Estimated',
                                             '7': 'Manual',
                                             '8': 'Simulation'
@@ -844,10 +951,10 @@ def setup_gps_direct_approach(rover):
                                             'latitude': latitude,
                                             'longitude': longitude,
                                             'altitude': float(parts[9]) if parts[9] else 0.0,
-                                            'satellites': int(parts[7]) if parts[7] else 0,
+                                            'satellites': len(satellites_in_view),  # Total satellites visible
                                             'hdop': float(parts[8]) if parts[8] else 99.9,
                                             'fix_quality': fix_quality_map.get(parts[6], 'Unknown'),
-                                            'solution_status': fix_quality_map.get(parts[6], 'Unknown')  # Add this for compatibility
+                                            'solution_status': fix_quality_map.get(parts[6], 'Unknown')
                                         }
                                         
                                         if emlid_reader.last_position is None:
@@ -863,7 +970,7 @@ def setup_gps_direct_approach(rover):
                             # Parse $GPRMC or $GNRMC for heading
                             elif line.startswith(('$GPRMC', '$GNRMC')):
                                 parts = line.split(',')
-                                if len(parts) >= 10 and parts[2] == 'A':  # Valid position
+                                if len(parts) >= 10 and parts[2] == 'A':
                                     try:
                                         cog = float(parts[8]) if parts[8] else 0.0
                                         if emlid_reader.last_position is None:
@@ -875,38 +982,39 @@ def setup_gps_direct_approach(rover):
                                     except Exception as parse_e:
                                         print(f"$GPRMC parsing error: {parse_e}")
                             
-                            # Parse $GPGSA or $GNGSA for satellite status and DOP - FIXED VERSION
-                            elif line.startswith(('$GPGSA', '$GNGSA')):
+                            # Parse ALL GSA messages for satellites used and DOP
+                            elif 'GSA' in line and line.startswith('$'):
                                 parts = line.split(',')
                                 if len(parts) >= 18:
                                     try:
+                                        constellation_gsa = line[:6]  # e.g., $GPGSA, $GNGSA, $GLGSA
                                         mode = parts[1]  # A = Auto, M = Manual
                                         fix_type = int(parts[2]) if parts[2] else 0  # 1=No fix, 2=2D, 3=3D
                                         
                                         # Extract satellites used (positions 3-14)
-                                        satellites_used = []
+                                        current_satellites_used = []
                                         for i in range(3, 15):  # Positions 3-14 contain satellite PRNs
-                                            if i < len(parts) and parts[i]:
+                                            if i < len(parts) and parts[i] and parts[i].strip():
                                                 try:
-                                                    sat_prn = int(parts[i])
-                                                    satellites_used.append(sat_prn)
+                                                    sat_prn = int(parts[i].strip())
+                                                    current_satellites_used.append(sat_prn)
                                                 except ValueError:
                                                     pass
                                         
-                                        # Extract DOP values - handle checksum properly
-                                        pdop = 99.9
-                                        hdop = 99.9
-                                        vdop = 99.9
+                                        # For GNGSA (multi-constellation), this gives us the total used
+                                        if constellation_gsa == '$GNGSA':
+                                            satellites_used = current_satellites_used
+                                        else:
+                                            # For single constellation GSA, add to the list
+                                            for sat in current_satellites_used:
+                                                if sat not in satellites_used:
+                                                    satellites_used.append(sat)
                                         
-                                        if len(parts) >= 16 and parts[15]:
-                                            pdop = float(parts[15])
-                                        if len(parts) >= 17 and parts[16]:
-                                            hdop = float(parts[16])
-                                        if len(parts) >= 18 and parts[17]:
-                                            # Remove checksum from VDOP if present
-                                            vdop_str = parts[17].split('*')[0]
-                                            if vdop_str:
-                                                vdop = float(vdop_str)
+                                        # Extract DOP values
+                                        pdop = float(parts[15]) if len(parts) >= 16 and parts[15] else 99.9
+                                        hdop = float(parts[16]) if len(parts) >= 17 and parts[16] else 99.9
+                                        vdop_str = parts[17].split('*')[0] if len(parts) >= 18 and parts[17] else '99.9'
+                                        vdop = float(vdop_str) if vdop_str else 99.9
                                         
                                         if emlid_reader.last_position is None:
                                             emlid_reader.last_position = {}
@@ -916,11 +1024,44 @@ def setup_gps_direct_approach(rover):
                                             'fix_type': fix_type,
                                             'satellites_used': satellites_used,
                                             'pdop': pdop,
-                                            'hdop': hdop,  # Update HDOP from GSA if available
+                                            'hdop': hdop,
                                             'vdop': vdop
                                         })
                                         
-                                        print(f"🛰️ GSA: Mode={mode}, Fix={fix_type}, Sats Used={len(satellites_used)}, PDOP={pdop:.1f}, HDOP={hdop:.1f}, VDOP={vdop:.1f}")
+                                        # Validation and detailed logging
+                                        sats_visible = len(satellites_in_view)
+                                        sats_used = len(satellites_used)
+                                        
+                                        if sats_visible < sats_used:
+                                            print(f"⚠️ Warning: Satellites used ({sats_used}) > visible ({sats_visible})")
+                                        
+                                        # Enhanced logging for RTK analysis
+                                        if not hasattr(custom_reading_thread, 'last_rtk_log') or current_time - custom_reading_thread.last_rtk_log >= 5.0:
+                                            fix_quality = emlid_reader.last_position.get('fix_quality', 'Unknown')
+                                            print(f"🛰️ RTK Status: {fix_quality}")
+                                            print(f"🛰️ GSA ({constellation_gsa}): Mode={mode}, Fix={fix_type}")
+                                            print(f"🛰️ Satellites: Visible={sats_visible}, Used={sats_used}")
+                                            print(f"🛰️ DOP: PDOP={pdop:.1f}, HDOP={hdop:.1f}, VDOP={vdop:.1f}")
+                                            
+                                            # RTK quality assessment
+                                            if fix_quality == 'RTK Fixed':
+                                                print("🟢 Excellent RTK Fixed solution")
+                                            elif fix_quality == 'RTK Float':
+                                                print("🟡 Good RTK Float solution")
+                                                if sats_used < 8:
+                                                    print("   💡 Consider: More satellites could help achieve RTK Fixed")
+                                            elif fix_quality in ['GPS', 'DGPS']:
+                                                print("🔴 Basic GPS solution - RTK corrections may not be working")
+                                                print("   💡 Check NTRIP connection and base station distance")
+                                            
+                                            # Satellite usage analysis
+                                            if sats_visible >= 20 and sats_used < 10:
+                                                print(f"   💡 Many satellites visible ({sats_visible}) but few used ({sats_used})")
+                                                print("   💡 This is normal - receiver selects best satellites for solution")
+                                            elif sats_used >= 12:
+                                                print(f"   ✅ Good satellite usage: {sats_used} satellites")
+                                            
+                                            custom_reading_thread.last_rtk_log = current_time
                                         
                                         for callback in emlid_reader.callbacks:
                                             callback(emlid_reader.last_position)
@@ -932,11 +1073,6 @@ def setup_gps_direct_approach(rover):
                                 parts = line.split(',')
                                 if len(parts) >= 9:
                                     try:
-                                        time_utc = parts[1]
-                                        rms = float(parts[2]) if parts[2] else 0.0
-                                        semi_major = float(parts[3]) if parts[3] else 0.0
-                                        semi_minor = float(parts[4]) if parts[4] else 0.0
-                                        orientation = float(parts[5]) if parts[5] else 0.0
                                         lat_error = float(parts[6]) if parts[6] else 0.0
                                         lon_error = float(parts[7]) if parts[7] else 0.0
                                         alt_error_str = parts[8].split('*')[0] if parts[8] else '0.0'
@@ -945,7 +1081,6 @@ def setup_gps_direct_approach(rover):
                                         if emlid_reader.last_position is None:
                                             emlid_reader.last_position = {}
                                         emlid_reader.last_position.update({
-                                            'rms': rms,
                                             'lat_error': lat_error,
                                             'lon_error': lon_error,
                                             'alt_error': alt_error
@@ -972,7 +1107,7 @@ def setup_gps_direct_approach(rover):
                         time.sleep(0.5)
                         continue
                         
-                    time.sleep(0.1)
+                    time.sleep(0.05)  # Faster polling for more data
                     
                 except Exception as e:
                     print(f"Reading thread error: {e}")
@@ -991,11 +1126,15 @@ def setup_gps_direct_approach(rover):
         rover.gps_reader = emlid_reader
         
         print("✅ GPS setup complete with direct approach")
-        return True
+        return True 
         
     except Exception as e:
         print(f"❌ Direct GPS setup failed: {e}")
         return False
+
+
+
+
 
 def enhanced_gps_status_monitor():
     """Enhanced GPS status monitor with health checks"""
