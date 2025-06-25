@@ -376,3 +376,53 @@
 2025-06-12 17:03:39,383,INFO,All health checks automatically passed for simulation mode
 2025-06-12 17:08:53,531,INFO,Starting rover RTK health check... (SIMULATION MODE)
 2025-06-12 17:08:53,539,INFO,All health checks automatically passed for simulation mode
+2025-06-17 14:22:17,323,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-06-17 14:22:17,436,INFO,All health checks automatically passed for simulation mode
+2025-06-17 14:22:54,353,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-06-17 14:22:54,937,INFO,All health checks automatically passed for simulation mode
+2025-06-17 14:32:36,513,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-06-17 14:32:36,827,INFO,All health checks automatically passed for simulation mode
+2025-06-17 14:39:23,574,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-06-17 14:39:23,574,INFO,All health checks automatically passed for simulation mode
+2025-06-17 14:49:16,755,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-06-17 14:49:16,771,INFO,All health checks automatically passed for simulation mode
+2025-06-18 15:47:25,489,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-06-18 15:47:25,490,INFO,All health checks automatically passed for simulation mode
+2025-06-18 17:23:50,896,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-06-18 17:23:50,904,INFO,All health checks automatically passed for simulation mode
+2025-06-25 23:02:11,021,INFO,Starting rover RTK health check... 
+2025-06-25 23:02:11,056,INFO,Antenna placement (Real GPS): satellites=16, SNR=39.6 dB-Hz
+2025-06-25 23:02:11,056,INFO,Antenna placement OK: satellites=16, SNR=39.6 dB-Hz
+2025-06-25 23:02:11,060,INFO,Check antenna_placement passed.
+2025-06-25 23:02:11,060,INFO,RTK status: Fixed (Real GPS)
+2025-06-25 23:02:11,060,INFO,Check rtk_status passed.
+2025-06-25 23:02:11,060,INFO,Satellite count (Real GPS): 15
+2025-06-25 23:02:11,060,INFO,Satellite count OK: 15 satellites
+2025-06-25 23:02:11,060,INFO,Check satellite_count passed.
+2025-06-25 23:02:11,060,INFO,DOP values (Real GPS): PDOP=2.2, HDOP=1.0, VDOP=2.0
+2025-06-25 23:02:11,065,ERROR,High DOP: PDOP=2.2, HDOP=1.0, VDOP=2.0
+2025-06-25 23:02:11,065,ERROR,Check dop_values failed: High DOP values
+2025-06-25 23:02:11,065,INFO,Signal strength (Real GPS): 39.8 dB-Hz from 15 satellites
+2025-06-25 23:02:11,065,WARNING,Weak signal: 39.8 dB-Hz
+2025-06-25 23:02:11,065,INFO,Check signal_strength passed.
+2025-06-25 23:02:11,068,INFO,Age of corrections (Real GPS): 50 ms
+2025-06-25 23:02:11,068,INFO,Age of corrections OK: 50 ms
+2025-06-25 23:02:11,068,INFO,Check age_of_corrections passed.
+2025-06-25 23:02:11,077,INFO,Position (Real GPS): 18.565705, 73.821159
+2025-06-25 23:02:11,077,INFO,Position valid (Real GPS): (18.565705, 73.821159)
+2025-06-25 23:02:11,079,INFO,Check position_validity passed.
+2025-06-25 23:02:11,079,INFO,Coordinate system (Real GPS): UTM (0.000, 0.000)
+2025-06-25 23:02:11,080,ERROR,Coordinate conversion failed - coordinates near zero
+2025-06-25 23:02:11,080,ERROR,Check coordinate_system failed: Coordinate conversion error
+2025-06-25 23:02:11,080,INFO,Constellation diversity (Real GPS): ['GPS', 'Galileo', 'GLONASS', 'BeiDou']
+2025-06-25 23:02:11,080,INFO,Constellation diversity OK: ['GPS', 'Galileo', 'GLONASS', 'BeiDou']
+2025-06-25 23:02:11,084,INFO,Check constellation_diversity passed.
+2025-06-25 23:02:11,095,INFO,Elevation mask (Real GPS): min elevation 27°
+2025-06-25 23:02:11,096,INFO,Elevation mask OK: min elevation 27°
+2025-06-25 23:02:11,096,INFO,Check elevation_mask passed.
+2025-06-25 23:02:11,096,ERROR,Unexpected error during health checks: 'RTKGPSRover' object has no attribute 'satellites_data'
+2025-06-25 23:02:11,096,WARNING,Failed checks: dop_values, coordinate_system
+2025-06-26 00:14:17,237,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-06-26 00:14:17,243,INFO,All health checks automatically passed for simulation mode
+2025-06-26 00:32:36,720,INFO,Starting rover RTK health check... (SIMULATION MODE)
+2025-06-26 00:32:36,723,INFO,All health checks automatically passed for simulation mode

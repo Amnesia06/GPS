@@ -84,7 +84,7 @@ class FailsafeModule:
     Can work with a real M2 GNSS receiver or in simulation mode.
     """
     
-    def __init__(self, port: str = "COM8", baud_rate: int = 115200, simulation_mode: bool = True):
+    def __init__(self, port: str = "COM8", baud_rate: int = 115200, simulation_mode: bool = True, rover=None):
         self.snr_values = {}
         # Initialize timestamps
 
@@ -92,6 +92,7 @@ class FailsafeModule:
         self.last_internet_check = time.time()
         self.last_module_comm = time.time()
         self.last_position_check = time.time()
+        self.last_correction_update = time.time() 
         
         self.monitoring = False
         self._on_failsafe = None
@@ -153,6 +154,10 @@ class FailsafeModule:
         self.path_deviation_events = []  # List of (timestamp, distance_dev, heading_dev) tuples
         self.last_waypoint = None  # Last successfully reached waypoint
         
+
+        
+
+
         # Configure simulation parameters for testing
         self.simulation_params = {
             "path_deviation_prob": 0.01,  # Probability of path deviation
@@ -223,9 +228,16 @@ class FailsafeModule:
         
         # Sleep duration in seconds (5 minutes)
         self.default_sleep_duration = 300
+
+        # ADD: Store rover reference for real GPS data
+        self.rover = rover
+        self.use_rover_gps = rover is not None and hasattr(rover, 'gps_reader')
+
+        logger.info("FailsafeModule initialized in %s mode with %s GPS source", 
+                "simulation" if simulation_mode else "hardware",
+                "rover" if self.use_rover_gps else "direct serial")
+
         
-        logger.info("FailsafeModule initialized in %s mode", 
-                   "simulation" if simulation_mode else "hardware")
 
     def set_safety_module(self, safety_module):
         """Set the safety module reference"""
@@ -258,13 +270,24 @@ class FailsafeModule:
 
     def read_gnss_data(self) -> Dict:
         """
-        Read data from M2 GNSS receiver
+        Read data from M2 GNSS receiver or rover GPS reader
         Returns a dictionary with parsed GNSS data
         """
+        # Priority 1: Use rover's GPS reader if available (real Emlid data)
+        if (hasattr(self, 'use_rover_gps') and self.use_rover_gps and 
+            self.rover and hasattr(self.rover, 'gps_reader') and 
+            self.rover.gps_reader and self.rover.gps_reader.last_position):
+            try:
+                return self._convert_rover_gps_data(self.rover.gps_reader.last_position)
+            except Exception as e:
+                logger.error(f"Error reading rover GPS data: {e}")
+                # Fall through to other methods
+
+        # Priority 2: Simulation mode
         if self.simulation_mode:
-            # Generate simulated GNSS data
             return self._generate_simulated_gnss_data()
             
+        # Priority 3: Direct serial connection (fallback)
         if not self.serial_conn or not self.serial_conn.is_open:
             if not self.connect_to_gnss():
                 return {}
@@ -287,7 +310,105 @@ class FailsafeModule:
             logger.error(f"Error reading GNSS data: {e}")
             return {}
 
+
+    def _convert_rover_gps_data(self, rover_position: Dict) -> Dict:
+        """Convert rover GPS data format to failsafe expected format"""
+        data = {}
+        
+        try:
+            # Map rover GPS data to failsafe format
+            data["timestamp"] = time.time()
+            
+            # Fix quality mapping
+            fix_quality = rover_position.get('fix_quality', 'Unknown')
+            if fix_quality == 'RTK Fixed':
+                data["fix_quality"] = "FIX"
+            elif fix_quality == 'RTK Float':
+                data["fix_quality"] = "FLOAT"
+            elif fix_quality in ['GPS', 'DGPS']:
+                data["fix_quality"] = "GPS"
+            else:
+                data["fix_quality"] = "NONE"
+            
+            # Basic GPS data
+            data["satellites"] = rover_position.get('satellites', 0)
+            data["hdop"] = rover_position.get('hdop', 99.9)
+            data["pdop"] = rover_position.get('pdop', 99.9)
+            data["vdop"] = rover_position.get('vdop', 99.9)
+            
+            # Position data
+            # Position data
+            lat = rover_position.get('latitude', 0.0)
+            lon = rover_position.get('longitude', 0.0)
+            if lat != 0.0 or lon != 0.0:  # Changed from 'and' to 'or'
+                data["position"] = (lat, lon)
+            else:
+                data["position"] = self.position  # Use existing position as fallback
+
+            
+            data["altitude"] = rover_position.get('altitude', 0.0)
+            
+            # Speed and heading
+            data["speed"] = rover_position.get('speed', 0.0)
+            data["heading"] = rover_position.get('heading', 0.0)
+            
+            # Correction age (if available)
+            data["correction_age"] = rover_position.get('age_of_corrections', 0.5)
+            
+            # SNR data (if available)
+            satellites_in_view = rover_position.get('satellites_in_view', [])
+            snr_values = {}
+            for sat in satellites_in_view:
+                prn = sat.get('prn', '')
+                snr = sat.get('snr', 0)
+                if prn and snr > 0:
+                    snr_values[prn] = snr
+            data["snr_values"] = snr_values
+            
+            # NTRIP data rate (default to good value for real GPS)
+            data["ntrip_data_rate"] = 5.0  # Assume good data rate for real GPS
+            
+            logger.debug(f"Converted rover GPS data: fix={data['fix_quality']}, sats={data['satellites']}")
+            
+        except Exception as e:
+            logger.error(f"Error converting rover GPS data: {e}")
+            # Return minimal data to avoid complete failure
+            data = {
+                "timestamp": time.time(),
+                "fix_quality": "NONE",
+                "satellites": 0,
+                "hdop": 99.9,
+                "pdop": 99.9
+            }
+        
+        return data
     
+    def _update_status_from_gnss_data(self, gnss_data: Dict) -> None:
+        """Update internal status from GNSS data"""
+        try:
+            if "fix_quality" in gnss_data:
+                self.update_gps_status(
+                    has_fix=(gnss_data["fix_quality"] != "NONE"),
+                    fix_type=gnss_data["fix_quality"],
+                    satellites=gnss_data.get("satellites", self.satellites),
+                    hdop=gnss_data.get("hdop", self.hdop),
+                    pdop=gnss_data.get("pdop", self.pdop),
+                    position=gnss_data.get("position", self.position),
+                    altitude=gnss_data.get("altitude", self.altitude)
+                )
+            
+            if "correction_age" in gnss_data:
+                self.update_correction_status(age=gnss_data["correction_age"])
+                
+            if "ntrip_data_rate" in gnss_data:
+                self.update_ntrip_data_rate(data_rate=gnss_data["ntrip_data_rate"])
+                
+            self.update_module_communication()
+            
+        except Exception as e:
+            logger.error(f"Error updating status from GNSS data: {e}")
+
+
     def _parse_nmea_message(self, msg) -> Dict:
         """Parse different types of NMEA messages and extract relevant data"""
         data = {}
@@ -573,6 +694,7 @@ class FailsafeModule:
         if age is not None:
             self.correction_age = age
             self.last_correction = current_time - age
+            self.last_correction_update = current_time  
 
     def update_ntrip_data_rate(self, data_rate: float = None) -> None:
         """Update the current NTRIP data rate in kbps"""
@@ -747,45 +869,74 @@ class FailsafeModule:
             try:
                 current_time = time.time()
                 
-                # Inject simulated failures occasionally in simulation mode
-                if self.simulation_mode and not self.active_failsafe:
-                    self._inject_simulated_failure()
+                # Priority 1: Use rover GPS data if available (REAL EMLID DATA)
+                if self.use_rover_gps and self.rover and hasattr(self.rover, 'gps_reader') and self.rover.gps_reader:
+                    try:
+                        # Get real GPS data from rover
+                        gnss_data = self.read_gnss_data()
+                        if gnss_data:
+                            self._update_status_from_gnss_data(gnss_data)
+                            logger.debug("Updated failsafe status from real rover GPS data")
+                        else:
+                            logger.warning("No GPS data available from rover")
+                            # Set GPS as unavailable
+                            self.update_gps_status(has_fix=False, satellites=0, hdop=99.9)
+                    except Exception as e:
+                        logger.error(f"Error reading rover GPS data: {e}")
+                        self.update_gps_status(has_fix=False, satellites=0, hdop=99.9)
                 
-                # Read from actual GNSS receiver if available and not in simulation
-                if not self.simulation_mode and (current_time - self.last_gps_update > 1):
+                # Priority 2: Simulation mode
+                elif self.simulation_mode:
+                    # Inject simulated failures occasionally
+                    if not self.active_failsafe:
+                        self._inject_simulated_failure()
+                    
+                    # Read simulated data
                     gnss_data = self.read_gnss_data()
                     if gnss_data:
-                        # Update status based on real data
-                        if "fix_quality" in gnss_data:
-                            self.update_gps_status(
-                                has_fix=(gnss_data["fix_quality"] != "NONE"),
-                                fix_type=gnss_data["fix_quality"],
-                                satellites=gnss_data.get("satellites", self.satellites),
-                                hdop=gnss_data.get("hdop", self.hdop),
-                                pdop=gnss_data.get("pdop", self.pdop),
-                                position=gnss_data.get("position", self.position),
-                                altitude=gnss_data.get("altitude", self.altitude)
-                            )
-                        
-                        if "correction_age" in gnss_data:
-                            self.update_correction_status(age=gnss_data["correction_age"])
-                            
-                        if "ntrip_data_rate" in gnss_data:
-                            self.update_ntrip_data_rate(data_rate=gnss_data["ntrip_data_rate"])
-                            
-                        self.update_module_communication()
+                        self._update_status_from_gnss_data(gnss_data)
                 
-                # Check for failsafe conditions
+                # Priority 3: Direct serial connection (fallback)
+                else:
+                    try:
+                        gnss_data = self.read_gnss_data()
+                        if gnss_data:
+                            self._update_status_from_gnss_data(gnss_data)
+                        else:
+                            logger.warning("No GPS data from direct serial connection")
+                            self.update_gps_status(has_fix=False, satellites=0, hdop=99.9)
+                    except Exception as e:
+                        logger.error(f"Error reading direct serial GPS data: {e}")
+                        self.update_gps_status(has_fix=False, satellites=0, hdop=99.9)
+                
+                # Check for failsafe conditions (regardless of data source)
                 if not self.in_recovery:
                     reason = self.get_failsafe_reason()
                     if reason:
+                        logger.warning(f"Failsafe condition detected: {reason}")
                         self._handle_failsafe(reason)
+                    else:
+                        # Reset active failsafe if conditions are good
+                        if self.active_failsafe:
+                            logger.info("Failsafe conditions cleared")
+                            self.active_failsafe = None
+                
+                # Handle recovery attempts
+                if self.in_recovery:
+                    self._handle_recovery()
                 
                 # Log status periodically
                 if current_time - last_record_time >= record_interval:
                     self._log_status()
                     last_record_time = current_time
                     
+                    # Debug log for real GPS monitoring
+                    if self.use_rover_gps:
+                        logger.info(f"Rover GPS Status: Fix={self.has_fix}, Sats={self.satellites}, HDOP={self.hdop:.1f}")
+
+
+                        
+                
                 # Update last position check time
                 self.last_position_check = current_time
                     
@@ -793,8 +944,13 @@ class FailsafeModule:
                 time.sleep(check_interval)
                 
             except Exception as e:
-                logger.error(f"Error in monitoring loop: {e}")
-                time.sleep(1)  # Wait a bit longer on error
+                logger.error(f"Critical error in monitoring loop: {e}")
+                # On critical error, assume GPS is down
+                self.update_gps_status(has_fix=False, satellites=0, hdop=99.9)
+                time.sleep(1)  # Wait longer on critical error
+        
+        logger.info("Monitoring loop stopped")
+
 
     def _inject_simulated_failure(self) -> None:
         """Inject a simulated failure for testing purposes"""

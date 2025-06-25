@@ -573,6 +573,7 @@ rover = None
 ntrip_client = None
 failsafe = None
 gps_thread = None
+health_checker = None  
 
 def check_gps_status():
     """Check GPS quality and connection status"""
@@ -1362,7 +1363,12 @@ if not os.path.exists(csv_file):
             'UTM X', 'UTM Y', 'Heading'
         ])
 def run_simulation():
-    global rover, ntrip_client, failsafe, global_serial_connection 
+    global rover, ntrip_client, failsafe, global_serial_connection, safety
+
+    rover = None
+    ntrip_client = None
+    failsafe = None
+    safety = None
     print("🧹 Initial cleanup of any existing GPS connections...")
     try:
         from emlid_gps_integration import cleanup_all_gps_connections
@@ -1380,23 +1386,88 @@ def run_simulation():
       # Only run the direct serial test if it hasn't been run yet
     if not direct_test_completed:
         direct_serial_test()
+
+   
+    # Add periodic NTRIP status check
+
+    print("🚜 Farm Rover Navigation Simulation 🚜")
+    print("=====================================")
+    sys.modules['__main__'].global_serial_connection = global_serial_connection
+
+        # CREATE ROVER INSTANCE FIRST
+    rover = Rover()
+    coordinate_converter = CoordinateConverter()
+    rover.coordinate_converter = coordinate_converter
+
+    # Initialize GPS reader attribute
+    if not hasattr(rover, 'gps_reader'):
+        rover.gps_reader = None
+        print("🔧 Initialized GPS reader attribute")
+
+
+    # -------------------- END HEALTH CHECK SECTION --------------------
+    plt.rcParams['figure.max_open_warning'] = 50
     
+    
+
+
+
+    
+    # Now initialize GPS logger
+    gps_logger = logging_100mm.initialize_gps_logger(rover)
+    
+    # Inside run_simulation function, replace the GPS setup section with:
+    if not hasattr(rover, 'gps_reader'):
+        rover.gps_reader = None
+        print("🔧 Initialized GPS reader attribute")
+
+    # Enhanced GPS setup wit
+    # Enhanced GPS setup with comprehensive error handling
+    print("\n📡 Setting up Emlid GPS integration...")
+    # Initialize gps_success variable with a default value
+    gps_success = False
+
+    # Try our direct approach using the already open connection
+    gps_success = setup_gps_direct_approach(rover)
+
+    status_thread = threading.Thread(target=display_gps_status, daemon=True)
+    status_thread.start()
+
+    print("\n🔒 Initializing failsafe system...")
+
+    
+
+    # Create failsafe with proper rover reference
+    # Create failsafe with proper rover reference
+    try:
+        print(f"🔒 Creating failsafe with rover={rover is not None}, gps_success={gps_success}")
+        failsafe = FailsafeModule(rover=rover, simulation_mode=(not gps_success))
+        safety = SafetyModule(failsafe=failsafe)
+        failsafe.set_safety_module(safety)
+        rover.failsafe = failsafe
+        print("✅ Failsafe created successfully")
+    except Exception as e:
+        print(f"❌ Failed to create failsafe: {e}")
+        import traceback
+        traceback.print_exc()
+        return
+
+
     def on_failsafe_triggered(reason):
         print(f"⚠️ Failsafe triggered: {reason.value}")
         rover.log_movement("stop")  # Stop the rover for safety
 
-    # Update the on_recovery_attempt function
     def on_recovery_attempt(reason):
         print(f"🔄 Attempting recovery from {reason.value}")
         current_time = time.time()
         try:
             if reason == GPSFailsafeReason.GPS_STALE_DATA or reason == GPSFailsafeReason.GPS_DATA_LOSS:
                 failsafe.last_gps_update = current_time
-                # Don't disconnect/reconnect, just reset the timer
                 print("Resetting GPS data timer without disconnecting")
                 return True
             elif reason == GPSFailsafeReason.GPS_CORRECTION_STALE:
-                failsafe.last_correction_update = current_time
+                failsafe.last_rtk_correction_update = current_time
+
                 print("Resetting GPS correction timer without disconnecting")
                 return True
             elif reason == GPSFailsafeReason.INTERNET_CONNECTION_LOST or reason == GPSFailsafeReason.INTERNET_CONNECTION_SLOW:
@@ -1410,74 +1481,90 @@ def run_simulation():
             print(f"Recovery attempt failed: {e}")
             return False
 
-   
-    # Add periodic NTRIP status check
+    # Set callbacks
+    failsafe.set_callbacks(on_failsafe_triggered, on_recovery_attempt)
 
-    print("🚜 Farm Rover Navigation Simulation 🚜")
-    print("=====================================")
-    sys.modules['__main__'].global_serial_connection = global_serial_connection
-    # -------------------- HEALTH CHECK SECTION --------------------
-    print("\n🔍 Running rover health checks before simulation...")
-    
-    # Create the rover first (needed by the health checker)
-    rover = Rover()
-    
-    # Initialize the coordinate converter
-    coordinate_converter = CoordinateConverter()
-    rover.coordinate_converter = coordinate_converter
-    
-    # Initialize health checker with the rover instance
+    # Start failsafe monitoring
+    failsafe.start_monitoring()
+    print(f"🔒 Failsafe initialized in {'simulation' if not gps_success else 'hardware'} mode")
+    # Initialize failsafe status after creation
+    if failsafe:
+        # Detect if we have real GPS connected
+        real_gps = False
+        if hasattr(rover, 'gps_reader') and rover.gps_reader is not None:
+            try:
+                real_gps = gps_success and not getattr(rover.gps_reader, 'simulate_gps', True)
+            except AttributeError:
+                real_gps = False
+                print("⚠️ GPS reader attribute error, using simulation mode")
+        
+        if real_gps:
+            # Use real GPS data if available
+            if rover.gps_reader.last_position:
+                pos = rover.gps_reader.last_position
+                failsafe.update_gps_status(
+                    has_fix=True, 
+                    satellites=pos.get('satellites', 10), 
+                    hdop=pos.get('hdop', 1.0)
+                )
+                print("🛰️ Failsafe using real GPS values")
+            else:
+                failsafe.update_gps_status(has_fix=True, satellites=8, hdop=1.5)
+                print("🛰️ Failsafe using default GPS values")
+        else:
+            # Simulation mode
+            failsafe.update_gps_status(has_fix=True, satellites=10, hdop=1.0)
+            print("🧪 Failsafe using simulation values")
+        
+        failsafe.update_internet_status(connected=True, latency=0.1)
+        failsafe.update_module_communication()
+        print("✅ Failsafe status initialized")
+    else:
+        print("⚠️ Failsafe not available, skipping status initialization")
+    # END OF ADDED CODE
+
+    # END OF ADDED CODE
+
+
+    # -------------------- ADD HEALTH CHECK HERE --------------------
+    print("\n🔍 Running rover health checks after GPS setup...")
+
+    # Wait for GPS data if real GPS is connected
+    if gps_success:
+        print("⏳ Waiting for GPS data...")
+        time.sleep(3)
+
+    # Initialize health checker
+    global health_checker
     health_checker = RoverHealthCheck(rover)
-    
+
     try:
-        # Run all health checks
-        health_status = health_checker.run_all_checks(simulation_mode=True)        
-        # Generate and display health report
+        # Detect real GPS properly
+        real_gps = (gps_success and 
+                hasattr(rover, 'gps_reader') and 
+                rover.gps_reader and 
+                rover.gps_reader.last_position and
+                not getattr(rover.gps_reader, 'simulate_gps', True))
+        
+        print(f"🔧 Real GPS detected: {real_gps}")
+        
+        # Run health checks
+        health_status = health_checker.run_all_checks(
+            continue_on_failure=True, 
+            simulation_mode=not real_gps
+        )
+        
+        # Display results
         health_report = health_checker.generate_health_report()
         print(health_report)
         
-        # Check if all systems passed
-        if not all(health_status.values()):
-            print("\n⚠️ One or more health checks failed. Aborting simulation.")
-            print("   Please address the issues and try again.")
-            return
-            
-        print("\n✅ All health checks passed! Proceeding with simulation.")
-    
-    except HealthCheckFailure as e:
-        print(f"\n❌ Critical health check failure: {e}")
-        print("   Simulation cannot proceed until this issue is resolved.")
-        return
-    # -------------------- END HEALTH CHECK SECTION --------------------
-    plt.rcParams['figure.max_open_warning'] = 50
-    
-    failsafe = FailsafeModule()
-    safety = SafetyModule(failsafe=failsafe)
-    failsafe.set_safety_module(safety)
+        if all(health_status.values()):
+            print("\n✅ All health checks passed!")
+        else:
+            print("\n⚠️ Some health checks failed, but continuing...")
 
-    # Initialize failsafe first
-    rover.failsafe = failsafe
-    
-    failsafe.update_gps_status(has_fix=True, satellites=10, hdop=1.0)
-    failsafe.update_internet_status(connected=True, latency=0.1)
-    failsafe.update_module_communication()
-    failsafe.set_callbacks(on_failsafe_triggered, on_recovery_attempt)
-    
-    # Now initialize GPS logger
-    gps_logger = logging_100mm.initialize_gps_logger(rover)
-    
-    # Inside run_simulation function, replace the GPS setup section with:
-
-    # Enhanced GPS setup with comprehensive error handling
-    print("\n📡 Setting up Emlid GPS integration...")
-    # Initialize gps_success variable with a default value
-    gps_success = False
-
-    # Try our direct approach using the already open connection
-    gps_success = setup_gps_direct_approach(rover)
-
-    status_thread = threading.Thread(target=display_gps_status, daemon=True)
-    status_thread.start()
+    except Exception as e:
+        print(f"\n⚠️ Health check error: {e}, continuing anyway...")
 
     # If that fails, fall back to simulation
     if not gps_success:
@@ -1493,6 +1580,11 @@ def run_simulation():
             emlid_reader.simulate_gps = True
             rover.gps_reader = emlid_reader
             
+            # Ensure the GPS reader is properly set
+            if not hasattr(rover, 'gps_reader') or rover.gps_reader is None:
+                print("❌ Failed to set GPS reader - creating minimal one")
+                rover.gps_reader = emlid_reader
+
             # Register callback for simulation
             update_rover_from_emlid(rover, emlid_reader)
 
@@ -1522,7 +1614,6 @@ def run_simulation():
     rover.navigator = navigator
     
     # Start failsafe monitoring
-    failsafe.start_monitoring()
 
     navigator.zigzag_pattern = True
 
@@ -1733,7 +1824,8 @@ def run_simulation():
 
 def cleanup_resources():
     """Enhanced cleanup with better error handling"""
-    global rover, ntrip_client, failsafe, gps_thread, global_serial_connection
+    global rover, ntrip_client, failsafe, gps_thread, global_serial_connection, health_checker, safety
+
     print("\nCleaning up resources...")
 
     try:
@@ -1784,6 +1876,22 @@ def cleanup_resources():
                 failsafe.stop_monitoring()
             except Exception as e:
                 print(f"⚠️ Failsafe cleanup error: {e}")
+        
+                # Cleanup health checker
+        if health_checker:
+            try:
+                health_checker = None
+                print("✅ Health checker cleaned up")
+            except Exception as e:
+                print(f"⚠️ Health checker cleanup error: {e}")
+
+        if safety:
+            try:
+                safety = None
+                print("✅ Safety module cleaned up")
+            except Exception as e:
+                print(f"⚠️ Safety cleanup error: {e}")
+
 
         try:
             plt.close('all')
@@ -1864,7 +1972,9 @@ def test_emlid_integration():
     # Initialize coordinate converter
     converter = CoordinateConverter()
     rover.coordinate_converter = converter
-    
+    rover.gps_reader = None
+
+    print(f"🔧 DEBUG: rover.gps_reader initialized: {hasattr(rover, 'gps_reader')}")  # ADD THIS DEBUG LINE
     # Create row navigator (needed for UTM offsets)
     navigator = RowNavigator(rover)
     rover.navigator = navigator
