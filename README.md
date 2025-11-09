@@ -92,10 +92,6 @@ Key highlights of this project include:
 
 Contributions are welcome! Please open issues or submit pull requests for improvements, bug fixes, or additional features.
 
-## License
-
-This project is released under the MIT License. See `LICENSE` for details.
-
 ## Acknowledgements
 
 - [Emlid](https://emlid.com/reach/) for the Reach M2 RTK module and documentation.
